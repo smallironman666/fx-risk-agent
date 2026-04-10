@@ -7,7 +7,7 @@
     "build": "tsc",
     "start": "ts-node src/index.ts",
     "agent": "ts-node src/index.ts",
-    "deploy": "forge script scripts/Deploy.s.sol --rpc-url $OG_RPC_URL --broadcast --private-key $PRIVATE_KEY",
+    "deploy": "forge script script/Deploy.s.sol --rpc-url $OG_RPC_URL --broadcast --private-key $PRIVATE_KEY --legacy --with-gas-price 3000000000",
     "compile": "forge build"
   },
   "keywords": [

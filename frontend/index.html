@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FX Risk Agent — Verifiable Risk Cockpit</title>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.1/dist/ethers.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #0a0c10; --surface: #13161e; --card: #1a1e2a;
+      --border: #252a3a; --text: #e4e7ef; --muted: #6b7280;
+      --green: #22c55e; --yellow: #eab308; --orange: #f97316; --red: #ef4444;
+      --blue: #3b82f6; --purple: #8b5cf6; --cyan: #06b6d4;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, 'Segoe UI', sans-serif;
+      background: var(--bg); color: var(--text);
+      min-height: 100vh;
+    }
+    code, .mono { font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace; }
+
+    /* ===== Top Status Bar ===== */
+    .topbar {
+      display: flex; align-items: center; gap: 24px;
+      padding: 12px 24px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+      overflow-x: auto;
+    }
+    .topbar .logo { font-weight: 700; font-size: 15px; white-space: nowrap; }
+    .topbar .logo span { color: var(--blue); }
+    .topbar .sep { width: 1px; height: 20px; background: var(--border); flex-shrink: 0; }
+    .topbar .item { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+    .topbar .label { color: var(--muted); }
+    .topbar .dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--green); animation: pulse 2s infinite;
+    }
+    @keyframes pulse { 0%,100% { opacity:1 } 50% { opacity:.3 } }
+
+    /* ===== Main Layout ===== */
+    .main { display: grid; grid-template-columns: 280px 1fr 320px; min-height: calc(100vh - 50px); }
+
+    /* ===== Left: Pairs Overview ===== */
+    .left {
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      padding: 16px;
+    }
+    .left h2 { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+    .pair-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: border-color .2s;
+    }
+    .pair-card:hover, .pair-card.active { border-color: var(--blue); }
+    .pair-card .pair-name { font-weight: 600; font-size: 15px; margin-bottom: 4px; }
+    .pair-card .pair-row { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); }
+    .pair-card .pair-rate { font-family: 'SF Mono', monospace; font-size: 18px; font-weight: 700; margin: 4px 0; }
+    .badge {
+      display: inline-block; padding: 1px 8px; border-radius: 3px;
+      font-size: 11px; font-weight: 700; letter-spacing: .5px;
+    }
+    .badge-LOW { background: rgba(34,197,94,.15); color: var(--green); }
+    .badge-MEDIUM { background: rgba(234,179,8,.15); color: var(--yellow); }
+    .badge-HIGH { background: rgba(249,115,22,.15); color: var(--orange); }
+    .badge-CRITICAL { background: rgba(239,68,68,.15); color: var(--red); }
+    .badge-NONE { background: rgba(107,114,128,.15); color: var(--muted); }
+
+    /* ===== Center ===== */
+    .center { padding: 20px; overflow-y: auto; }
+    .section-title {
+      font-size: 12px; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 1px;
+      margin-bottom: 10px;
+    }
+    .stats-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 20px; }
+    .stat { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 14px; }
+    .stat .sl { font-size: 11px; color: var(--muted); margin-bottom: 2px; }
+    .stat .sv { font-size: 22px; font-weight: 700; }
+
+    /* ===== Audit Timeline ===== */
+    .timeline { position: relative; padding-left: 28px; }
+    .timeline::before {
+      content: ''; position: absolute; left: 10px; top: 0; bottom: 0;
+      width: 2px; background: var(--border);
+    }
+    .tl-item { position: relative; margin-bottom: 16px; }
+    .tl-dot {
+      position: absolute; left: -24px; top: 4px;
+      width: 12px; height: 12px; border-radius: 50%;
+      border: 2px solid var(--border); background: var(--bg);
+    }
+    .tl-dot.dot-LOW { border-color: var(--green); background: var(--green); }
+    .tl-dot.dot-MEDIUM { border-color: var(--yellow); background: var(--yellow); }
+    .tl-dot.dot-HIGH { border-color: var(--orange); background: var(--orange); }
+    .tl-dot.dot-CRITICAL { border-color: var(--red); background: var(--red); }
+    .tl-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 8px; padding: 12px;
+    }
+    .tl-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .tl-pair { font-weight: 600; }
+    .tl-time { font-size: 12px; color: var(--muted); }
+    .tl-flow {
+      display: flex; align-items: center; gap: 4px;
+      font-size: 11px; color: var(--muted);
+      margin-top: 8px; flex-wrap: wrap;
+    }
+    .tl-flow .step {
+      background: var(--surface); border: 1px solid var(--border);
+      padding: 2px 8px; border-radius: 4px; font-family: 'SF Mono', monospace;
+    }
+    .tl-flow .step.done { border-color: var(--green); color: var(--green); }
+    .tl-flow .arrow { color: var(--muted); }
+    .tl-hashes { font-size: 11px; margin-top: 6px; }
+    .tl-hashes a {
+      color: var(--blue); text-decoration: none; font-family: 'SF Mono', monospace;
+    }
+    .tl-hashes a:hover { text-decoration: underline; }
+
+    /* ===== Right: AI Decision Panel ===== */
+    .right {
+      background: var(--surface);
+      border-left: 1px solid var(--border);
+      padding: 16px;
+      overflow-y: auto;
+    }
+    .right h2 { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+    .ai-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 8px; padding: 14px; margin-bottom: 12px;
+    }
+    .ai-card .ai-label { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+    .ai-card .ai-value { font-size: 14px; line-height: 1.5; }
+    .ai-card .ai-big { font-size: 28px; font-weight: 700; }
+    .confidence-bar {
+      height: 6px; background: var(--border); border-radius: 3px;
+      margin-top: 6px; overflow: hidden;
+    }
+    .confidence-bar .fill { height: 100%; border-radius: 3px; transition: width .5s; }
+    .json-toggle {
+      font-size: 12px; color: var(--blue); cursor: pointer;
+      margin-top: 8px; display: inline-block;
+    }
+    .json-block {
+      display: none; background: var(--bg); border: 1px solid var(--border);
+      border-radius: 6px; padding: 10px; margin-top: 8px;
+      font-size: 11px; font-family: 'SF Mono', monospace;
+      white-space: pre-wrap; word-break: break-all;
+      max-height: 300px; overflow-y: auto; color: var(--muted);
+    }
+
+    .empty-state { text-align: center; padding: 40px; color: var(--muted); font-size: 14px; }
+
+    /* ===== Responsive ===== */
+    @media (max-width: 1024px) {
+      .main { grid-template-columns: 1fr; }
+      .left, .right { border: none; border-bottom: 1px solid var(--border); }
+      .stats-row { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ===== Top Status Bar ===== -->
+<div class="topbar">
+  <div class="logo">FX Risk Agent <span>Cockpit</span></div>
+  <div class="sep"></div>
+  <div class="item"><div class="dot"></div><span>0G Galileo</span></div>
+  <div class="sep"></div>
+  <div class="item"><span class="label">Agent</span><span id="agentStatus">Idle</span></div>
+  <div class="sep"></div>
+  <div class="item"><span class="label">Model</span><span>Doubao Seed 2.0 Pro</span></div>
+  <div class="sep"></div>
+  <div class="item"><span class="label">Contract</span><span class="mono" id="topContract">-</span></div>
+  <div class="sep"></div>
+  <div class="item"><span class="label">Alerts</span><span id="topAlertCount">-</span></div>
+</div>
+
+<!-- ===== Main 3-Column Layout ===== -->
+<div class="main">
+
+  <!-- Left: Currency Pairs -->
+  <div class="left">
+    <h2>Currency Pairs</h2>
+    <div id="pairsList"></div>
+  </div>
+
+  <!-- Center: Stats + Audit Timeline -->
+  <div class="center">
+    <div class="section-title">Overview</div>
+    <div class="stats-row">
+      <div class="stat"><div class="sl">Total Decisions</div><div class="sv" id="statTotal">-</div></div>
+      <div class="stat"><div class="sl">HIGH / CRITICAL</div><div class="sv" style="color:var(--orange)" id="statHigh">-</div></div>
+      <div class="stat"><div class="sl">Pairs Monitored</div><div class="sv" id="statPairs">-</div></div>
+      <div class="stat"><div class="sl">Last Update</div><div class="sv" style="font-size:14px" id="statTime">-</div></div>
+    </div>
+
+    <div class="section-title">Verifiable Audit Trail</div>
+    <div id="auditTimeline" class="timeline">
+      <div class="empty-state">Loading from 0G Chain...</div>
+    </div>
+  </div>
+
+  <!-- Right: AI Decision Detail -->
+  <div class="right">
+    <h2>AI Decision Detail</h2>
+    <div id="aiPanel">
+      <div class="empty-state">Select an alert from the timeline to view AI reasoning</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+var CONTRACT_ADDRESS = "0x12030bc39dd18E2e8e4F10e685b7B7E639F0925A";
+var RPC_URL = "https://evmrpc-testnet.0g.ai";
+var EXPLORER = "https://chainscan-galileo.0g.ai";
+
+var ABI = [
+  "function getAlertCount() view returns (uint256)",
+  "function alerts(uint256) view returns (string currencyPair, uint8 level, uint256 spotRate, uint256 threshold, bytes32 storageRootHash, uint256 timestamp, address reporter)",
+  "function getLatestAlerts(uint256 count) view returns (tuple(string currencyPair, uint8 level, uint256 spotRate, uint256 threshold, bytes32 storageRootHash, uint256 timestamp, address reporter)[])",
+];
+
+var LEVELS = ["LOW", "MEDIUM", "HIGH", "CRITICAL"];
+var alertsData = [];
+
+function f6(val) { return (Number(val) / 1000000).toFixed(4); }
+function ftime(ts) { return new Date(Number(ts) * 1000).toLocaleString(); }
+function clear(el) { while (el.firstChild) el.removeChild(el.firstChild); }
+function el(tag, cls, text) {
+  var e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text) e.textContent = text;
+  return e;
+}
+
+function renderPairCards(alerts) {
+  var container = document.getElementById("pairsList");
+  clear(container);
+
+  // 按货币对分组，取最新
+  var latest = {};
+  for (var i = 0; i < alerts.length; i++) {
+    var a = alerts[i];
+    var pair = a.currencyPair;
+    if (!latest[pair] || Number(a.timestamp) > Number(latest[pair].timestamp)) {
+      latest[pair] = a;
+    }
+  }
+
+  var defaultPairs = ["USD/CNY", "EUR/USD", "GBP/USD", "USD/JPY"];
+  var allPairs = Object.keys(latest).length > 0 ? Object.keys(latest) : defaultPairs;
+
+  allPairs.forEach(function(pair) {
+    var a = latest[pair];
+    var card = el("div", "pair-card");
+    card.setAttribute("data-pair", pair);
+
+    var name = el("div", "pair-name", pair);
+    card.appendChild(name);
+
+    if (a) {
+      var level = Number(a.level);
+      var rate = el("div", "pair-rate", f6(a.spotRate));
+      card.appendChild(rate);
+
+      var row = el("div", "pair-row");
+      var badge = el("span", "badge badge-" + LEVELS[level], LEVELS[level]);
+      row.appendChild(badge);
+      var time = el("span", "", ftime(a.timestamp));
+      time.style.fontSize = "11px";
+      row.appendChild(time);
+      card.appendChild(row);
+    } else {
+      var noData = el("div", "pair-rate", "-");
+      noData.style.color = "var(--muted)";
+      card.appendChild(noData);
+      var row2 = el("div", "pair-row");
+      row2.appendChild(el("span", "badge badge-NONE", "NO DATA"));
+      card.appendChild(row2);
+    }
+
+    card.addEventListener("click", function() {
+      document.querySelectorAll(".pair-card").forEach(function(c) { c.classList.remove("active"); });
+      card.classList.add("active");
+      filterTimeline(pair);
+    });
+
+    container.appendChild(card);
+  });
+}
+
+function filterTimeline(pair) {
+  renderTimeline(pair ? alertsData.filter(function(a) { return a.currencyPair === pair; }) : alertsData);
+}
+
+function renderTimeline(alerts) {
+  var container = document.getElementById("auditTimeline");
+  clear(container);
+
+  if (alerts.length === 0) {
+    container.appendChild(el("div", "empty-state", "No alerts found. Run the agent to generate data."));
+    return;
+  }
+
+  // 最新的在上面
+  var sorted = alerts.slice().sort(function(a, b) { return Number(b.timestamp) - Number(a.timestamp); });
+
+  sorted.forEach(function(a, idx) {
+    var level = LEVELS[Number(a.level)];
+    var item = el("div", "tl-item");
+
+    var dot = el("div", "tl-dot dot-" + level);
+    item.appendChild(dot);
+
+    var card = el("div", "tl-card");
+
+    // header
+    var header = el("div", "tl-header");
+    var left = el("div", "");
+    left.appendChild(el("span", "tl-pair", a.currencyPair + " "));
+    left.appendChild(el("span", "badge badge-" + level, level));
+    header.appendChild(left);
+    header.appendChild(el("span", "tl-time", ftime(a.timestamp)));
+    card.appendChild(header);
+
+    // rate info
+    var info = el("div", "");
+    info.style.cssText = "font-size:13px;color:var(--muted);margin-bottom:4px";
+    info.textContent = "Rate: " + f6(a.spotRate) + " | Threshold: " + f6(a.threshold);
+    card.appendChild(info);
+
+    // verification flow
+    var flow = el("div", "tl-flow");
+    var steps = ["AI Assessment", "0G Storage", "On-Chain Alert"];
+    steps.forEach(function(s, i) {
+      var step = el("span", "step done", s);
+      flow.appendChild(step);
+      if (i < steps.length - 1) flow.appendChild(el("span", "arrow", " -> "));
+    });
+    card.appendChild(flow);
+
+    // hashes
+    var hashes = el("div", "tl-hashes");
+
+    var storageLabel = document.createTextNode("Storage: ");
+    hashes.appendChild(storageLabel);
+    var storageLink = el("a", "", a.storageRootHash.slice(0, 22) + "...");
+    storageLink.href = "https://storagescan-galileo.0g.ai";
+    storageLink.target = "_blank";
+    hashes.appendChild(storageLink);
+
+    hashes.appendChild(document.createTextNode("  |  "));
+
+    var txLabel = document.createTextNode("Explorer: ");
+    hashes.appendChild(txLabel);
+    var txLink = el("a", "", "View on 0G Chain");
+    txLink.href = EXPLORER + "/address/" + CONTRACT_ADDRESS;
+    txLink.target = "_blank";
+    hashes.appendChild(txLink);
+
+    card.appendChild(hashes);
+
+    // 点击展示AI详情
+    card.style.cursor = "pointer";
+    card.addEventListener("click", function() { showAIDetail(a); });
+
+    item.appendChild(card);
+    container.appendChild(item);
+  });
+}
+
+function showAIDetail(alert) {
+  var panel = document.getElementById("aiPanel");
+  clear(panel);
+
+  var level = LEVELS[Number(alert.level)];
+
+  // Risk Level
+  var c1 = el("div", "ai-card");
+  c1.appendChild(el("div", "ai-label", "Risk Level"));
+  var big = el("div", "ai-big badge-text", level);
+  big.style.color = "var(--" + (level === "LOW" ? "green" : level === "MEDIUM" ? "yellow" : level === "HIGH" ? "orange" : "red") + ")";
+  c1.appendChild(big);
+  panel.appendChild(c1);
+
+  // Currency Pair + Rate
+  var c2 = el("div", "ai-card");
+  c2.appendChild(el("div", "ai-label", "Currency Pair"));
+  c2.appendChild(el("div", "ai-value", alert.currencyPair + "  @  " + f6(alert.spotRate)));
+  panel.appendChild(c2);
+
+  // Threshold
+  var c3 = el("div", "ai-card");
+  c3.appendChild(el("div", "ai-label", "Breach Threshold"));
+  c3.appendChild(el("div", "ai-value", f6(alert.threshold)));
+  panel.appendChild(c3);
+
+  // Reporter
+  var c4 = el("div", "ai-card");
+  c4.appendChild(el("div", "ai-label", "Reporter (Agent Wallet)"));
+  var addr = el("div", "ai-value mono");
+  addr.style.fontSize = "12px";
+  addr.style.wordBreak = "break-all";
+  addr.textContent = alert.reporter;
+  c4.appendChild(addr);
+  panel.appendChild(c4);
+
+  // Storage Root Hash (可点击跳转)
+  var c5 = el("div", "ai-card");
+  c5.appendChild(el("div", "ai-label", "0G Storage Root Hash"));
+  var hashLink = el("a", "ai-value mono");
+  hashLink.style.cssText = "font-size:11px;word-break:break-all;color:var(--cyan);display:block;text-decoration:none;cursor:pointer";
+  hashLink.textContent = alert.storageRootHash;
+  hashLink.href = "https://storagescan-galileo.0g.ai/" + alert.storageRootHash;
+  hashLink.target = "_blank";
+  hashLink.addEventListener("mouseenter", function() { this.style.textDecoration = "underline"; });
+  hashLink.addEventListener("mouseleave", function() { this.style.textDecoration = "none"; });
+  c5.appendChild(hashLink);
+
+  var btnRow = el("div", "");
+  btnRow.style.cssText = "margin-top:8px;display:flex;gap:8px";
+
+  var viewBtn = el("a", "");
+  viewBtn.style.cssText = "font-size:12px;padding:4px 12px;background:var(--blue);color:#fff;border-radius:4px;text-decoration:none;display:inline-block";
+  viewBtn.textContent = "Open StorageScan";
+  viewBtn.href = "https://storagescan-galileo.0g.ai/" + alert.storageRootHash;
+  viewBtn.target = "_blank";
+  btnRow.appendChild(viewBtn);
+
+  var chainBtn = el("a", "");
+  chainBtn.style.cssText = "font-size:12px;padding:4px 12px;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:4px;text-decoration:none;display:inline-block";
+  chainBtn.textContent = "View on Chain Explorer";
+  chainBtn.href = EXPLORER + "/address/" + CONTRACT_ADDRESS;
+  chainBtn.target = "_blank";
+  btnRow.appendChild(chainBtn);
+
+  c5.appendChild(btnRow);
+  panel.appendChild(c5);
+
+  // Timestamp
+  var c6 = el("div", "ai-card");
+  c6.appendChild(el("div", "ai-label", "Block Timestamp"));
+  c6.appendChild(el("div", "ai-value", ftime(alert.timestamp)));
+  panel.appendChild(c6);
+
+  // Verification Flow
+  var c7 = el("div", "ai-card");
+  c7.appendChild(el("div", "ai-label", "Verification Path"));
+  var pathDiv = el("div", "");
+  pathDiv.style.cssText = "font-size:12px;line-height:2;margin-top:4px";
+
+  var steps = [
+    "1. AI analyzed market data and assessed risk",
+    "2. Full decision log uploaded to 0G Storage",
+    "3. Risk alert recorded on 0G Chain with rootHash",
+    "4. Anyone can verify: rootHash -> download log -> check reasoning"
+  ];
+  steps.forEach(function(s) {
+    var p = el("div", "", s);
+    p.style.color = "var(--green)";
+    pathDiv.appendChild(p);
+  });
+  c7.appendChild(pathDiv);
+  panel.appendChild(c7);
+}
+
+async function loadDashboard() {
+  try {
+    var provider = new ethers.JsonRpcProvider(RPC_URL);
+    var contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, provider);
+
+    var count = Number(await contract.getAlertCount());
+
+    // Top bar
+    document.getElementById("topAlertCount").textContent = count;
+    var topC = document.getElementById("topContract");
+    topC.textContent = CONTRACT_ADDRESS.slice(0, 8) + "..." + CONTRACT_ADDRESS.slice(-6);
+    topC.style.cursor = "pointer";
+    topC.onclick = function() { window.open(EXPLORER + "/address/" + CONTRACT_ADDRESS, "_blank"); };
+
+    // Stats
+    document.getElementById("statTotal").textContent = count;
+
+    if (count === 0) {
+      document.getElementById("statHigh").textContent = "0";
+      document.getElementById("statPairs").textContent = "0";
+      document.getElementById("statTime").textContent = "-";
+      renderPairCards([]);
+      renderTimeline([]);
+      return;
+    }
+
+    var fetchCount = Math.min(count, 20);
+    var alerts = await contract.getLatestAlerts(fetchCount);
+
+    // 转为普通对象
+    alertsData = [];
+    var highCount = 0;
+    var pairs = {};
+
+    for (var i = 0; i < alerts.length; i++) {
+      var a = alerts[i];
+      var level = Number(a.level);
+      if (level >= 2) highCount++;
+      pairs[a.currencyPair] = true;
+
+      alertsData.push({
+        currencyPair: a.currencyPair,
+        level: a.level,
+        spotRate: a.spotRate,
+        threshold: a.threshold,
+        storageRootHash: a.storageRootHash,
+        timestamp: a.timestamp,
+        reporter: a.reporter
+      });
+    }
+
+    document.getElementById("statHigh").textContent = highCount;
+    document.getElementById("statPairs").textContent = Object.keys(pairs).length;
+
+    var latestTs = 0;
+    alertsData.forEach(function(a) {
+      var t = Number(a.timestamp);
+      if (t > latestTs) latestTs = t;
+    });
+    document.getElementById("statTime").textContent = latestTs > 0 ? ftime(latestTs) : "-";
+    document.getElementById("agentStatus").textContent = "Last run " + ftime(latestTs);
+
+    renderPairCards(alertsData);
+    renderTimeline(alertsData);
+
+  } catch (err) {
+    var tl = document.getElementById("auditTimeline");
+    clear(tl);
+    var errDiv = el("div", "empty-state", "Error loading data: " + err.message);
+    errDiv.style.color = "var(--red)";
+    tl.appendChild(errDiv);
+  }
+}
+
+loadDashboard();
+setInterval(loadDashboard, 30000);
+</script>
+
+</body>
+</html>
