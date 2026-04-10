@@ -2,6 +2,7 @@ import * as dotenv from "dotenv";
 dotenv.config();
 
 import { analyzeRisk } from "./agent/analyzer";
+import { checkAndAlert } from "./agent/alerter";
 import { DecisionLog, RiskLevel } from "./agent/types";
 import { generateHistoricalQuotes, RISK_THRESHOLDS } from "./data/fxSimulator";
 import { ZgStorageClient } from "./storage/zgStorage";
@@ -110,7 +111,10 @@ async function runAgent() {
       console.log(`[AI] ${levelLabel} (confidence: ${(assessment.confidence * 100).toFixed(0)}%)`);
       console.log(`[AI] ${assessment.reasoning}`);
 
-      // Step 3: 构建决策日志
+      // Step 3: HIGH/CRITICAL 触发告警通知
+      await checkAndAlert(assessment);
+
+      // Step 4: 构建决策日志
       const decisionLog: DecisionLog = {
         agentId: AGENT_ID,
         sessionId,
@@ -121,13 +125,13 @@ async function runAgent() {
         createdAt: new Date().toISOString(),
       };
 
-      // Step 4: 上传到0G Storage（静默SDK内部日志）
+      // Step 5: 上传到0G Storage
       console.log("[0G] Uploading decision log to Storage...");
       const rootHash = await storageClient.uploadDecisionLog(decisionLog);
       decisionLog.storageRootHash = rootHash;
       console.log(`[0G] Stored: ${rootHash.slice(0, 18)}...`);
 
-      // Step 5: 上链
+      // Step 6: 上链
       let txHash = "-";
       if (oracleClient) {
         console.log("[0G] Recording alert on-chain...");
