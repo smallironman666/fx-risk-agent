@@ -1,0 +1,33 @@
+{
+  "name": "fx-risk-agent",
+  "version": "0.1.0",
+  "description": "AI-powered FX Risk Monitoring Agent with on-chain audit trail via 0G Storage & Chain",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "ts-node src/index.ts",
+    "agent": "ts-node src/index.ts",
+    "deploy": "forge script scripts/Deploy.s.sol --rpc-url $OG_RPC_URL --broadcast --private-key $PRIVATE_KEY",
+    "compile": "forge build"
+  },
+  "keywords": [
+    "0G",
+    "AI-Agent",
+    "FX",
+    "DeFi",
+    "risk-management",
+    "web3"
+  ],
+  "author": "0xSmallironman",
+  "license": "MIT",
+  "dependencies": {
+    "@0gfoundation/0g-ts-sdk": "^1.2.1",
+    "@anthropic-ai/sdk": "^0.87.0",
+    "@types/node": "^25.5.2",
+    "dotenv": "^17.4.1",
+    "ethers": "6.13.1",
+    "openai": "^6.34.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^6.0.2"
+  }
+}

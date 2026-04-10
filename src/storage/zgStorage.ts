@@ -1,0 +1,60 @@
+import { Indexer, MemData } from "@0gfoundation/0g-ts-sdk";
+import { ethers } from "ethers";
+import { DecisionLog } from "../agent/types";
+
+/**
+ * 0G Storage 集成
+ * 将AI决策日志上传到0G去中心化存储，获取root hash作为审计凭证
+ */
+
+const OG_RPC_URL = process.env.OG_RPC_URL || "https://evmrpc-testnet.0g.ai";
+const OG_INDEXER_URL = process.env.OG_STORAGE_INDEXER || "https://indexer-storage-testnet-turbo.0g.ai";
+
+export class ZgStorageClient {
+  private indexer: Indexer;
+  private signer: ethers.Wallet;
+
+  constructor(privateKey: string) {
+    const provider = new ethers.JsonRpcProvider(OG_RPC_URL);
+    this.signer = new ethers.Wallet(privateKey, provider);
+    this.indexer = new Indexer(OG_INDEXER_URL);
+  }
+
+  /**
+   * 将决策日志上传到0G Storage
+   * @returns root hash（bytes32格式，可直接写入合约）
+   */
+  async uploadDecisionLog(log: DecisionLog): Promise<string> {
+    const jsonData = JSON.stringify(log, null, 2);
+    const encoder = new TextEncoder();
+    const data = encoder.encode(jsonData);
+
+    const memData = new MemData(data);
+
+    const [result, uploadErr] = await this.indexer.upload(memData, OG_RPC_URL, this.signer);
+    if (uploadErr) {
+      throw new Error(`Failed to upload to 0G Storage: ${uploadErr}`);
+    }
+
+    // upload()返回 {txHash, rootHash} 或批量模式的 {txHashes[], rootHashes[]}
+    const uploadResult = result as { txHash: string; rootHash: string };
+    console.log(`[0G Storage] Upload successful, tx: ${uploadResult.txHash}`);
+    console.log(`[0G Storage] Root hash: ${uploadResult.rootHash}`);
+
+    return uploadResult.rootHash;
+  }
+
+  /**
+   * 从0G Storage下载决策日志
+   */
+  async downloadDecisionLog(rootHash: string, outputPath: string): Promise<void> {
+    const err = await this.indexer.download(rootHash, outputPath, true);
+    if (err) {
+      throw new Error(`Failed to download from 0G Storage: ${err}`);
+    }
+  }
+
+  getSignerAddress(): string {
+    return this.signer.address;
+  }
+}
