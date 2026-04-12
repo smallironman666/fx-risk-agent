@@ -1,3 +1,9 @@
+<div align="center">
+
+**English** | [中文](./README.zh-CN.md)
+
+</div>
+
 # FX Risk Agent
 
 > A verifiable AI-powered FX risk monitoring agent on 0G Network — every decision permanently stored, on-chain recorded, fully auditable.
@@ -109,6 +115,9 @@ npm run agent
 
 # Run with specific scenario (for demo)
 npx ts-node src/index.ts --pair USD/CNY --scenario crisis
+
+# Fetch full AI decision log from 0G Storage by rootHash
+npx ts-node src/tools/fetchLog.ts 0x526564ff261184de3fd17c90500c66aef0cee9f14e6fc12328b0abc35297fcdb
 ```
 
 ## Currency Pairs Monitored
@@ -136,6 +145,7 @@ npx ts-node src/index.ts --pair USD/CNY --scenario crisis
 - [x] On-chain alert recording (FXRiskOracle contract)
 - [x] Webhook alerting for HIGH/CRITICAL events
 - [x] Web dashboard (verifiable risk cockpit)
+- [x] CLI tool: fetch full AI log from 0G Storage by rootHash
 - [ ] Real FX data feed (Alpha Vantage / Twelve Data)
 - [ ] 0G Compute: Sealed Inference for strategy privacy
 - [ ] 0G Agent ID: accountable autonomous agent identity
