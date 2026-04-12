@@ -13,6 +13,9 @@
     "mint-agent": "ts-node src/tools/mintAgent.ts",
     "fetch-log": "ts-node src/tools/fetchLog.ts",
     "claim-faucets": "ts-node src/tools/claimFaucets.ts",
+    "test:sol": "forge test -vv",
+    "test:ts": "ts-node --project test/ts/tsconfig.json test/ts/analyzer.test.ts",
+    "test": "npm run test:sol && npm run test:ts",
     "compile": "forge build"
   },
   "keywords": [

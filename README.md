@@ -223,12 +223,24 @@ Every AI response from `0g-compute` backend is:
 
 The `DecisionLog` stored on 0G Storage includes the `inferenceVerification` field with the chat ID and verification result.
 
+## Testing
+
+```bash
+npm test                  # run everything
+npm run test:sol          # Foundry contract tests
+npm run test:ts           # TypeScript unit tests
+```
+
+Current coverage:
+- **19 Solidity tests** across `FXRiskAgentINFT` and `FXRiskOracleV2` (mint, update, events, risk level mapping, agent accounting, access control)
+- **14 TypeScript tests** across AI response parser (markdown fences, missing fields, confidence clamping), FX simulator (data shape, timestamp ordering, scenario variance), and session summary builder
+- **33 tests passing** in under 200ms
+
 ## Known Limitations
 
 - FX data is currently simulated (production would use real API feeds like Alpha Vantage)
 - 0G Compute on testnet only offers Qwen 2.5 7B (weaker than Doubao Seed 2.0 Pro); mainnet has GLM-5, DeepSeek V3.1
 - StorageScan does not support direct file lookup by root hash via URL
-- No automated test suite yet (planned for final submission)
 - Not deployed to mainnet (requires real 0G tokens, planned before May 16)
 
 ## About
