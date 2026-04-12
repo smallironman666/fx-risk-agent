@@ -14,10 +14,10 @@
 
 ## Problem
 
-Cross-border payment companies process billions in daily FX transactions. Real incidents happen:
+The cross-border payment industry processes billions in daily FX transactions. Common risk patterns include:
 
-- **Currency pair inversion** — A payment channel returned USD/ZAR=16 instead of ZAR/USD=0.06 (260x error), causing massive losses
-- **Rate source outage** — Reference rate feed went missing, affecting 3,676 customers and 4,141 transactions
+- **Currency pair inversion** — Upstream rate sources occasionally return inverted pairs (e.g., USD/X vs X/USD swap), potentially producing 100x+ pricing errors
+- **Rate source outage** — External feed disruptions cause FX quote generation to fail, impacting customer transactions
 - **No audit trail** — After incidents, teams can't reconstruct what the system knew, when it knew it, and what decisions were made
 
 Manual monitoring misses critical windows. Decision trails are scattered. Post-incident audits lack verifiable evidence.
