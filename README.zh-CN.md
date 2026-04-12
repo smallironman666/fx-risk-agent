@@ -1,8 +1,6 @@
-<div align="center">
-
-[English](./README.md) | **中文**
-
-</div>
+<p align="right">
+  <a href="./README.md">English</a> | <b>中文</b>
+</p>
 
 # FX Risk Agent
 
