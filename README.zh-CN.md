@@ -6,8 +6,21 @@
 
 > 基于 0G Network 的可验证 AI 外汇风险监控 Agent —— 每个决策永久存储、上链记录、完全可审计。
 
+<p align="center">
+  <a href="https://youtu.be/j2eaoJN18a8">
+    <img src="https://img.shields.io/badge/▶_观看_Demo-YouTube-red?style=for-the-badge&logo=youtube" alt="Demo Video" />
+  </a>
+  <a href="http://124.223.198.204:9088">
+    <img src="https://img.shields.io/badge/📊_在线-Dashboard-blue?style=for-the-badge" alt="Live Dashboard" />
+  </a>
+  <a href="https://chainscan-galileo.0g.ai/address/0x12030bc39dd18E2e8e4F10e685b7B7E639F0925A">
+    <img src="https://img.shields.io/badge/🔗_链上-查看-green?style=for-the-badge" alt="On-Chain" />
+  </a>
+</p>
+
 ## 在线 Demo
 
+- **Demo 视频**: [在 YouTube 观看 (2:37)](https://youtu.be/j2eaoJN18a8)
 - **Dashboard**: [http://124.223.198.204:9088](http://124.223.198.204:9088)
 - **合约地址（Galileo 测试网）**: [`0x12030bc39dd18E2e8e4F10e685b7B7E639F0925A`](https://chainscan-galileo.0g.ai/address/0x12030bc39dd18E2e8e4F10e685b7B7E639F0925A)
 - **区块浏览器**: [在 0G Chain 上查看](https://chainscan-galileo.0g.ai/address/0x12030bc39dd18E2e8e4F10e685b7B7E639F0925A)

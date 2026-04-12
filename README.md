@@ -6,8 +6,21 @@
 
 > A verifiable AI-powered FX risk monitoring agent on 0G Network — every decision permanently stored, on-chain recorded, fully auditable.
 
+<p align="center">
+  <a href="https://youtu.be/j2eaoJN18a8">
+    <img src="https://img.shields.io/badge/▶_Watch_Demo-YouTube-red?style=for-the-badge&logo=youtube" alt="Demo Video" />
+  </a>
+  <a href="http://124.223.198.204:9088">
+    <img src="https://img.shields.io/badge/📊_Live-Dashboard-blue?style=for-the-badge" alt="Live Dashboard" />
+  </a>
+  <a href="https://chainscan-galileo.0g.ai/address/0x12030bc39dd18E2e8e4F10e685b7B7E639F0925A">
+    <img src="https://img.shields.io/badge/🔗_View-On_Chain-green?style=for-the-badge" alt="On-Chain" />
+  </a>
+</p>
+
 ## Live Demo
 
+- **Demo Video**: [Watch on YouTube (2:37)](https://youtu.be/j2eaoJN18a8)
 - **Dashboard**: [http://124.223.198.204:9088](http://124.223.198.204:9088)
 - **Contract (Galileo Testnet)**: [`0x12030bc39dd18E2e8e4F10e685b7B7E639F0925A`](https://chainscan-galileo.0g.ai/address/0x12030bc39dd18E2e8e4F10e685b7B7E639F0925A)
 - **Explorer**: [View on 0G Chain](https://chainscan-galileo.0g.ai/address/0x12030bc39dd18E2e8e4F10e685b7B7E639F0925A)
