@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FX Risk Agent — Verifiable Risk Cockpit</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Major+Mono+Display&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.1/dist/ethers.umd.min.js"></script>
   <style>
     :root {
@@ -11,6 +14,8 @@
       --border: #252a3a; --text: #e4e7ef; --muted: #6b7280;
       --green: #22c55e; --yellow: #eab308; --orange: #f97316; --red: #ef4444;
       --blue: #3b82f6; --purple: #8b5cf6; --cyan: #06b6d4;
+      --display: 'Major Mono Display', 'SF Mono', monospace;
+      --tech: 'JetBrains Mono', 'SF Mono', monospace;
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -59,10 +64,27 @@
       cursor: pointer;
       transition: border-color .2s;
     }
-    .pair-card:hover, .pair-card.active { border-color: var(--blue); }
-    .pair-card .pair-name { font-weight: 600; font-size: 15px; margin-bottom: 4px; }
+    .pair-card {
+      transition: border-color .2s, transform .15s, box-shadow .2s;
+    }
+    .pair-card:hover {
+      border-color: rgba(139,92,246,.4);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 16px rgba(0,0,0,.25), 0 0 0 1px rgba(139,92,246,.15);
+    }
+    .pair-card.active {
+      border-color: var(--cyan);
+      box-shadow: 0 0 0 1px rgba(6,182,212,.3), 0 0 20px rgba(6,182,212,.15);
+    }
+    .pair-card .pair-name {
+      font-weight: 700;
+      font-size: 13px;
+      letter-spacing: 0.5px;
+      font-family: var(--tech);
+    }
     .pair-card .pair-row { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); }
-    .pair-card .pair-rate { font-family: 'SF Mono', monospace; font-size: 18px; font-weight: 700; margin: 4px 0; }
+    .pair-card .pair-rate { font-family: var(--tech); font-size: 20px; font-weight: 700; margin: 4px 0; }
+    .pair-card .pair-spark svg { display: block; width: 100%; height: 100%; }
     .badge {
       display: inline-block; padding: 1px 8px; border-radius: 3px;
       font-size: 11px; font-weight: 700; letter-spacing: .5px;
@@ -159,6 +181,329 @@
 
     .empty-state { text-align: center; padding: 40px; color: var(--muted); font-size: 14px; }
 
+    /* =================================================
+       AGENT PASSPORT — ERC-7857 INFT Identity Card
+       Design: sovereign AI asset, terminal-meets-NFT
+       ================================================= */
+    .agent-passport {
+      position: relative;
+      padding: 16px;
+      margin-bottom: 20px;
+      border-radius: 12px;
+      background:
+        linear-gradient(180deg, rgba(139,92,246,.08) 0%, rgba(6,182,212,.02) 100%),
+        var(--card);
+      border: 1px solid rgba(139,92,246,.25);
+      overflow: hidden;
+      box-shadow:
+        0 0 24px rgba(139,92,246,.08),
+        inset 0 1px 0 rgba(255,255,255,.03);
+    }
+
+    /* Scanline texture overlay */
+    .agent-passport::before {
+      content: '';
+      position: absolute; inset: 0;
+      background-image: repeating-linear-gradient(
+        0deg,
+        transparent 0, transparent 2px,
+        rgba(139,92,246,.025) 2px, rgba(139,92,246,.025) 3px
+      );
+      pointer-events: none;
+      opacity: 0.6;
+    }
+
+    .passport-head {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 14px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .sigil {
+      width: 52px; height: 52px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #1a1e2a 0%, #252a3a 100%);
+      border: 1px solid rgba(139,92,246,.3);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0,0,0,.3), inset 0 0 8px rgba(139,92,246,.08);
+    }
+    .sigil svg { width: 100%; height: 100%; display: block; }
+
+    .passport-head-meta { flex: 1; min-width: 0; }
+    .passport-label {
+      font-family: var(--tech);
+      font-size: 9px;
+      color: var(--purple);
+      letter-spacing: 1.5px;
+      font-weight: 600;
+      margin-bottom: 2px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .passport-label::after {
+      content: ''; flex: 1; height: 1px;
+      background: linear-gradient(90deg, rgba(139,92,246,.3), transparent);
+    }
+    .passport-tokenid {
+      font-family: var(--display);
+      font-size: 24px;
+      letter-spacing: -1px;
+      line-height: 1.1;
+      background: linear-gradient(90deg, var(--purple) 0%, var(--cyan) 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .passport-name {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 12px;
+      margin-bottom: 12px;
+      border-bottom: 1px dashed var(--border);
+      position: relative;
+      z-index: 1;
+    }
+    .passport-name-text {
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: -0.2px;
+    }
+    .passport-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-family: var(--tech);
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      color: var(--green);
+      padding: 3px 7px;
+      background: rgba(34,197,94,.1);
+      border: 1px solid rgba(34,197,94,.2);
+      border-radius: 3px;
+    }
+    .status-pulse {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 6px var(--green), 0 0 2px var(--green);
+      animation: heartbeat 1.4s ease-in-out infinite;
+    }
+    @keyframes heartbeat {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.5); opacity: .5; }
+    }
+
+    /* Inference meter */
+    .passport-meter {
+      margin-bottom: 14px;
+      position: relative; z-index: 1;
+    }
+    .meter-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      font-family: var(--tech);
+      font-size: 9px;
+      letter-spacing: 1.5px;
+      color: var(--muted);
+      margin-bottom: 5px;
+      font-weight: 600;
+    }
+    .meter-value {
+      font-family: var(--display);
+      font-size: 14px;
+      color: var(--cyan);
+      letter-spacing: -0.5px;
+    }
+    .meter-bar {
+      height: 4px;
+      background: rgba(139,92,246,.12);
+      border-radius: 2px;
+      overflow: hidden;
+      position: relative;
+    }
+    .meter-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--purple), var(--cyan));
+      box-shadow: 0 0 8px rgba(6,182,212,.5);
+      border-radius: 2px;
+      transition: width .8s cubic-bezier(.4,0,.2,1);
+      position: relative;
+    }
+    .meter-fill::after {
+      content: '';
+      position: absolute;
+      top: 0; right: 0; bottom: 0;
+      width: 12px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,.4), transparent);
+      animation: meter-shimmer 2s ease-in-out infinite;
+    }
+    @keyframes meter-shimmer {
+      0%, 100% { opacity: .6; transform: translateX(0); }
+      50% { opacity: 1; transform: translateX(-4px); }
+    }
+
+    /* Info grid */
+    .passport-grid {
+      display: grid;
+      gap: 7px;
+      position: relative; z-index: 1;
+    }
+    .passport-row {
+      display: grid;
+      grid-template-columns: 64px 1fr;
+      align-items: center;
+      font-size: 11px;
+    }
+    .row-key {
+      font-family: var(--tech);
+      font-size: 9px;
+      color: var(--muted);
+      letter-spacing: 1.5px;
+      font-weight: 600;
+    }
+    .row-val {
+      color: var(--text);
+      font-size: 11px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .row-val.mono {
+      font-family: var(--tech);
+      font-size: 10px;
+      letter-spacing: .2px;
+    }
+    a.row-val {
+      color: var(--cyan);
+      text-decoration: none;
+      transition: color .15s;
+    }
+    a.row-val:hover { color: var(--purple); }
+
+    /* =================================================
+       V2 TIMELINE — Agent Badge Pills
+       ================================================= */
+    .tl-card {
+      position: relative;
+      transition: border-color .2s, transform .15s;
+    }
+    .tl-card.v2 {
+      background:
+        linear-gradient(90deg, rgba(139,92,246,.04) 0%, transparent 40%),
+        var(--card);
+      border-left: 2px solid transparent;
+      padding-left: 14px;
+    }
+    .tl-card.v2::before {
+      content: '';
+      position: absolute;
+      left: -1px; top: -1px; bottom: -1px;
+      width: 3px;
+      background: linear-gradient(180deg, var(--purple), var(--cyan));
+      border-radius: 8px 0 0 8px;
+    }
+    .tl-card.v1 {
+      opacity: .78;
+      background: var(--card);
+    }
+    .tl-card.v1:hover {
+      opacity: 1;
+    }
+
+    /* Agent chip with sigil dot */
+    .agent-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 2px 9px 2px 4px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, rgba(139,92,246,.18), rgba(139,92,246,.08));
+      border: 1px solid rgba(139,92,246,.35);
+      font-family: var(--tech);
+      font-size: 10px;
+      color: #c7b9fb;
+      font-weight: 600;
+      margin-left: 8px;
+      transition: all .15s;
+    }
+    .agent-chip:hover {
+      background: linear-gradient(90deg, rgba(139,92,246,.28), rgba(139,92,246,.15));
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba(139,92,246,.2);
+    }
+    .agent-chip-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--purple), var(--cyan));
+      box-shadow: 0 0 4px rgba(139,92,246,.6);
+      flex-shrink: 0;
+    }
+
+    /* Backend chip */
+    .backend-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: rgba(6,182,212,.1);
+      border: 1px solid rgba(6,182,212,.3);
+      font-family: var(--tech);
+      font-size: 10px;
+      color: #67e3f3;
+      font-weight: 500;
+      margin-left: 5px;
+    }
+    .backend-chip.tee {
+      color: var(--green);
+      background: rgba(34,197,94,.1);
+      border-color: rgba(34,197,94,.3);
+    }
+    .backend-chip-icon {
+      font-size: 10px;
+      opacity: .8;
+      line-height: 1;
+    }
+
+    /* V1 legacy chip */
+    .legacy-chip {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 3px;
+      background: transparent;
+      border: 1px dashed rgba(107,114,128,.5);
+      font-family: var(--tech);
+      font-size: 9px;
+      color: var(--muted);
+      font-weight: 500;
+      margin-left: 8px;
+      letter-spacing: 1px;
+    }
+
+    /* Top bar Agent highlight */
+    .topbar #topContract {
+      font-family: var(--tech);
+      font-size: 12px;
+      color: var(--cyan);
+    }
+    .topbar #topAlertCount {
+      font-family: var(--tech);
+      font-size: 12px;
+    }
+    .topbar #agentStatus {
+      font-family: var(--tech);
+      color: var(--purple);
+      font-weight: 600;
+    }
+
     /* ===== Responsive ===== */
     @media (max-width: 1024px) {
       .main { grid-template-columns: 1fr; }
@@ -190,8 +535,51 @@
   <!-- Left: Agent Identity + Currency Pairs -->
   <div class="left">
     <h2>Agent Identity</h2>
-    <div id="agentIdentity" class="pair-card" style="margin-bottom:16px">
-      <div style="color:var(--muted);font-size:12px">Loading...</div>
+    <div id="agentIdentity" class="agent-passport">
+      <div class="passport-head">
+        <div class="sigil" id="agentSigil"></div>
+        <div class="passport-head-meta">
+          <div class="passport-label">ERC-7857 · INFT</div>
+          <div class="passport-tokenid">#<span id="tokenIdDisplay">----</span></div>
+        </div>
+      </div>
+
+      <div class="passport-name">
+        <span class="passport-name-text" id="passportName">Loading...</span>
+        <span class="passport-status" id="passportStatus" style="display:none">
+          <span class="status-pulse"></span>
+          LIVE
+        </span>
+      </div>
+
+      <div class="passport-meter">
+        <div class="meter-label">
+          <span>ON-CHAIN INFERENCES</span>
+          <span class="meter-value" id="inferenceDisplay">0</span>
+        </div>
+        <div class="meter-bar">
+          <div class="meter-fill" id="inferenceFill" style="width:0%"></div>
+        </div>
+      </div>
+
+      <div class="passport-grid">
+        <div class="passport-row">
+          <span class="row-key">VER</span>
+          <span class="row-val" id="passportVersion">-</span>
+        </div>
+        <div class="passport-row">
+          <span class="row-key">TYPE</span>
+          <span class="row-val" id="passportType">-</span>
+        </div>
+        <div class="passport-row">
+          <span class="row-key">CREATOR</span>
+          <a class="row-val mono" id="passportCreator" target="_blank">-</a>
+        </div>
+        <div class="passport-row">
+          <span class="row-key">CONTRACT</span>
+          <a class="row-val mono" id="passportContract" target="_blank">-</a>
+        </div>
+      </div>
     </div>
 
     <h2>Currency Pairs</h2>
@@ -269,51 +657,177 @@ function el(tag, cls, text) {
   return e;
 }
 
+// 生成迷你行情走势图（sparkline）
+// rates: 按时间排序的汇率数组
+// level: 最新风险等级（决定颜色）
+// width/height: SVG 画布尺寸
+function generateSparkline(rates, level, width, height) {
+  if (!rates || rates.length < 2) {
+    // 数据不足，渲染一条水平线
+    return (
+      '<svg viewBox="0 0 ' + width + ' ' + height + '" xmlns="http://www.w3.org/2000/svg">' +
+      '<line x1="0" y1="' + (height / 2) + '" x2="' + width + '" y2="' + (height / 2) +
+      '" stroke="rgba(107,114,128,0.3)" stroke-width="1" stroke-dasharray="2 2"/>' +
+      '</svg>'
+    );
+  }
+
+  var min = Math.min.apply(null, rates);
+  var max = Math.max.apply(null, rates);
+  var range = max - min || 1;
+  var pad = 2;
+
+  // 颜色按风险等级
+  var colorMap = ["#22c55e", "#eab308", "#f97316", "#ef4444"];
+  var color = colorMap[level] || colorMap[0];
+
+  // 构造折线点
+  var points = rates.map(function(r, i) {
+    var x = (i / (rates.length - 1)) * (width - 2 * pad) + pad;
+    var y = height - pad - ((r - min) / range) * (height - 2 * pad);
+    return x.toFixed(1) + "," + y.toFixed(1);
+  }).join(" ");
+
+  // 面积填充路径
+  var areaPath = "M" + pad + "," + (height - pad) + " L" + points + " L" + (width - pad) + "," + (height - pad) + " Z";
+  // 折线路径
+  var linePath = "M" + points.replace(/ /g, " L");
+
+  var gradId = "spark-" + Math.random().toString(36).slice(2, 8);
+
+  return (
+    '<svg viewBox="0 0 ' + width + ' ' + height + '" xmlns="http://www.w3.org/2000/svg">' +
+      '<defs>' +
+        '<linearGradient id="' + gradId + '" x1="0%" y1="0%" x2="0%" y2="100%">' +
+          '<stop offset="0%" stop-color="' + color + '" stop-opacity="0.3"/>' +
+          '<stop offset="100%" stop-color="' + color + '" stop-opacity="0"/>' +
+        '</linearGradient>' +
+      '</defs>' +
+      // 面积填充
+      '<path d="' + areaPath + '" fill="url(#' + gradId + ')"/>' +
+      // 折线
+      '<path d="' + linePath + '" stroke="' + color + '" stroke-width="1.5" fill="none" stroke-linejoin="round" stroke-linecap="round"/>' +
+      // 最后一个点
+      '<circle cx="' + (width - pad) + '" cy="' +
+        (height - pad - ((rates[rates.length - 1] - min) / range) * (height - 2 * pad)).toFixed(1) +
+        '" r="2" fill="' + color + '"/>' +
+    '</svg>'
+  );
+}
+
+// 插入 SVG 字符串（避免 innerHTML 触发警告）
+function insertSVG(container, svgString) {
+  clear(container);
+  var parser = new DOMParser();
+  var svgDoc = parser.parseFromString(svgString, "image/svg+xml");
+  var svgNode = svgDoc.documentElement;
+  if (svgNode && svgNode.nodeName === "svg") {
+    container.appendChild(svgNode);
+  }
+}
+
+// 格式化变化百分比
+function formatChange(current, previous) {
+  if (previous == null || previous === 0) return null;
+  var pct = ((current - previous) / previous) * 100;
+  var sign = pct >= 0 ? "+" : "";
+  return sign + pct.toFixed(2) + "%";
+}
+
 function renderPairCards(alerts) {
   var container = document.getElementById("pairsList");
   clear(container);
 
-  // 按货币对分组，取最新
-  var latest = {};
+  // 收集每个 pair 的完整历史（用于 sparkline）
+  var history = {};
   for (var i = 0; i < alerts.length; i++) {
     var a = alerts[i];
     var pair = a.currencyPair;
-    if (!latest[pair] || Number(a.timestamp) > Number(latest[pair].timestamp)) {
-      latest[pair] = a;
-    }
+    if (!history[pair]) history[pair] = [];
+    history[pair].push(a);
   }
 
+  // 按时间升序排序（sparkline 从左到右读）
+  Object.keys(history).forEach(function(pair) {
+    history[pair].sort(function(x, y) { return Number(x.timestamp) - Number(y.timestamp); });
+  });
+
   var defaultPairs = ["USD/CNY", "EUR/USD", "GBP/USD", "USD/JPY"];
-  var allPairs = Object.keys(latest).length > 0 ? Object.keys(latest) : defaultPairs;
+  var allPairs = Object.keys(history).length > 0 ? Object.keys(history) : defaultPairs;
 
   allPairs.forEach(function(pair) {
-    var a = latest[pair];
+    var items = history[pair] || [];
+    var latest = items.length > 0 ? items[items.length - 1] : null;
+    var prev = items.length > 1 ? items[items.length - 2] : null;
+
     var card = el("div", "pair-card");
     card.setAttribute("data-pair", pair);
 
-    var name = el("div", "pair-name", pair);
-    card.appendChild(name);
+    // 第一行：pair 名称 + 最新风险等级 badge
+    var headRow = el("div", "pair-head");
+    headRow.style.cssText = "display:flex;justify-content:space-between;align-items:center;margin-bottom:6px";
+    headRow.appendChild(el("span", "pair-name", pair));
 
-    if (a) {
-      var level = Number(a.level);
-      var rate = el("div", "pair-rate", f6(a.spotRate));
-      card.appendChild(rate);
-
-      var row = el("div", "pair-row");
-      var badge = el("span", "badge badge-" + LEVELS[level], LEVELS[level]);
-      row.appendChild(badge);
-      var time = el("span", "", ftime(a.timestamp));
-      time.style.fontSize = "11px";
-      row.appendChild(time);
-      card.appendChild(row);
+    if (latest) {
+      var level = Number(latest.level);
+      headRow.appendChild(el("span", "badge badge-" + LEVELS[level], LEVELS[level]));
     } else {
-      var noData = el("div", "pair-rate", "-");
-      noData.style.color = "var(--muted)";
-      card.appendChild(noData);
-      var row2 = el("div", "pair-row");
-      row2.appendChild(el("span", "badge badge-NONE", "NO DATA"));
-      card.appendChild(row2);
+      headRow.appendChild(el("span", "badge badge-NONE", "NO DATA"));
     }
+    card.appendChild(headRow);
+
+    // 第二行：大号汇率 + 变化百分比
+    if (latest) {
+      var rateRow = el("div", "");
+      rateRow.style.cssText = "display:flex;align-items:baseline;gap:8px;margin-bottom:4px";
+
+      var rateVal = el("span", "pair-rate", f6(latest.spotRate));
+      rateVal.style.cssText = "font-family:var(--tech);font-size:20px;font-weight:700;letter-spacing:-0.5px;margin:0";
+      rateRow.appendChild(rateVal);
+
+      // 变化百分比
+      var changeStr = formatChange(Number(latest.spotRate) / 1e6, prev ? Number(prev.spotRate) / 1e6 : null);
+      if (changeStr) {
+        var changeEl = el("span", "", changeStr);
+        var isUp = changeStr.startsWith("+");
+        var isNeutral = changeStr === "+0.00%";
+        changeEl.style.cssText = "font-family:var(--tech);font-size:11px;font-weight:600;color:" +
+          (isNeutral ? "var(--muted)" : (isUp ? "var(--green)" : "var(--red)"));
+        rateRow.appendChild(changeEl);
+      }
+      card.appendChild(rateRow);
+    } else {
+      var noRate = el("div", "");
+      noRate.style.cssText = "font-family:var(--tech);font-size:20px;font-weight:700;color:var(--muted);margin-bottom:4px";
+      noRate.textContent = "—";
+      card.appendChild(noRate);
+    }
+
+    // 第三行：sparkline
+    var sparkWrap = el("div", "pair-spark");
+    sparkWrap.style.cssText = "height:24px;margin:4px 0 6px 0;";
+    if (latest) {
+      var rates = items.map(function(x) { return Number(x.spotRate) / 1e6; });
+      var level2 = Number(latest.level);
+      insertSVG(sparkWrap, generateSparkline(rates, level2, 240, 24));
+    } else {
+      insertSVG(sparkWrap, generateSparkline([], 0, 240, 24));
+    }
+    card.appendChild(sparkWrap);
+
+    // 第四行：元信息（alert 数量 + 最新时间）
+    var metaRow = el("div", "");
+    metaRow.style.cssText = "display:flex;justify-content:space-between;font-size:10px;font-family:var(--tech);color:var(--muted);letter-spacing:0.5px";
+
+    var leftMeta = el("span", "", items.length + " " + (items.length === 1 ? "alert" : "alerts"));
+    metaRow.appendChild(leftMeta);
+
+    if (latest) {
+      var rightMeta = el("span", "", ftime(latest.timestamp));
+      rightMeta.style.fontSize = "10px";
+      metaRow.appendChild(rightMeta);
+    }
+    card.appendChild(metaRow);
 
     card.addEventListener("click", function() {
       document.querySelectorAll(".pair-card").forEach(function(c) { c.classList.remove("active"); });
@@ -348,7 +862,7 @@ function renderTimeline(alerts) {
     var dot = el("div", "tl-dot dot-" + level);
     item.appendChild(dot);
 
-    var card = el("div", "tl-card");
+    var card = el("div", "tl-card " + (a.version === "v2" ? "v2" : "v1"));
 
     // header
     var header = el("div", "tl-header");
@@ -356,21 +870,29 @@ function renderTimeline(alerts) {
     left.appendChild(el("span", "tl-pair", a.currencyPair + " "));
     left.appendChild(el("span", "badge badge-" + level, level));
 
-    // V2 特有：Agent 徽章 + Backend 徽章
+    // V2 特有：带印记点的 Agent 徽章 + Backend 徽章
     if (a.version === "v2" && a.agentTokenId !== null && a.agentTokenId !== undefined) {
-      var agentBadge = el("span", "", " Agent #" + a.agentTokenId);
-      agentBadge.style.cssText = "margin-left:6px;padding:2px 8px;border-radius:3px;background:rgba(139,92,246,0.15);color:var(--purple);font-size:10px;font-weight:700";
-      left.appendChild(agentBadge);
+      var agentChip = el("span", "agent-chip");
+      agentChip.title = "Agent INFT #" + a.agentTokenId + " (ERC-7857)";
+      var chipDot = el("span", "agent-chip-dot");
+      agentChip.appendChild(chipDot);
+      var chipText = el("span", "", "#" + a.agentTokenId);
+      agentChip.appendChild(chipText);
+      left.appendChild(agentChip);
 
       if (a.aiBackend) {
-        var backendBadge = el("span", "", a.aiBackend);
-        backendBadge.style.cssText = "margin-left:4px;padding:2px 8px;border-radius:3px;background:rgba(6,182,212,0.15);color:var(--cyan);font-size:10px;font-weight:600";
-        left.appendChild(backendBadge);
+        var isTEE = a.aiBackend === "0g-compute";
+        var backendChip = el("span", "backend-chip" + (isTEE ? " tee" : ""));
+        backendChip.title = isTEE ? "0G Compute · TEE-verified inference" : "Doubao · OpenAI-compatible";
+        var iconText = isTEE ? "⎔" : "◎";
+        backendChip.appendChild(el("span", "backend-chip-icon", iconText));
+        backendChip.appendChild(el("span", "", a.aiBackend));
+        left.appendChild(backendChip);
       }
     } else if (a.version === "v1") {
-      var legacyBadge = el("span", "", " V1");
-      legacyBadge.style.cssText = "margin-left:6px;padding:2px 8px;border-radius:3px;background:rgba(107,114,128,0.15);color:var(--muted);font-size:10px";
-      left.appendChild(legacyBadge);
+      var legacyChip = el("span", "legacy-chip", "V1 LEGACY");
+      legacyChip.title = "Pre-Agent-ID era (historical audit trail)";
+      left.appendChild(legacyChip);
     }
 
     header.appendChild(left);
@@ -654,47 +1176,120 @@ async function loadDashboard() {
   }
 }
 
-// Agent Identity 卡片渲染
+// 生成基于 tokenId 的确定性 SVG 印记（每个 Agent 视觉唯一）
+function generateSigil(tokenId) {
+  var tid = Number(tokenId);
+  // 根据 tokenId 生成可重复的角度偏移
+  var angle = (tid * 47) % 360;
+  var inner = 4 + (tid % 3);
+  return (
+    '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">' +
+      '<defs>' +
+        '<linearGradient id="sgrad' + tid + '" x1="0%" y1="0%" x2="100%" y2="100%">' +
+          '<stop offset="0%" stop-color="#8b5cf6"/>' +
+          '<stop offset="100%" stop-color="#06b6d4"/>' +
+        '</linearGradient>' +
+        '<radialGradient id="srad' + tid + '" cx="50%" cy="50%" r="50%">' +
+          '<stop offset="0%" stop-color="rgba(139,92,246,0.3)"/>' +
+          '<stop offset="100%" stop-color="rgba(6,182,212,0)"/>' +
+        '</radialGradient>' +
+      '</defs>' +
+      // 底色
+      '<rect width="48" height="48" fill="#13161e"/>' +
+      // 背景辐射光晕
+      '<rect width="48" height="48" fill="url(#srad' + tid + ')"/>' +
+      // 外圈虚线环（旋转）
+      '<circle cx="24" cy="24" r="20" stroke="url(#sgrad' + tid + ')" stroke-width="1" fill="none" stroke-dasharray="3 3" opacity="0.4" transform="rotate(' + angle + ' 24 24)"/>' +
+      // 中圈
+      '<circle cx="24" cy="24" r="14" stroke="#8b5cf6" stroke-width="1" fill="none" stroke-dasharray="5 2" opacity="0.7" transform="rotate(' + (-angle) + ' 24 24)"/>' +
+      // 内实心
+      '<circle cx="24" cy="24" r="9" fill="url(#sgrad' + tid + ')" opacity="0.9"/>' +
+      // 中心点
+      '<circle cx="24" cy="24" r="' + inner + '" fill="#0a0c10"/>' +
+      // tokenId 编号
+      '<text x="24" y="27" text-anchor="middle" fill="#06b6d4" font-family="JetBrains Mono,monospace" font-size="7" font-weight="700">' + tid + '</text>' +
+    '</svg>'
+  );
+}
+
+// 数字动画（0 → target）
+function animateNumber(element, target) {
+  var start = parseInt(element.textContent, 10) || 0;
+  var duration = 500;
+  var startTime = performance.now();
+  function step(now) {
+    var progress = Math.min((now - startTime) / duration, 1);
+    var eased = 1 - Math.pow(1 - progress, 3);
+    var current = Math.round(start + (target - start) * eased);
+    element.textContent = current;
+    if (progress < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+// Agent Identity 渲染 — 填充 passport 各字段
 function renderAgentCard(info) {
-  var container = document.getElementById("agentIdentity");
-  if (!container) return;
-  clear(container);
+  var tokenIdEl = document.getElementById("tokenIdDisplay");
+  var nameEl = document.getElementById("passportName");
+  var statusEl = document.getElementById("passportStatus");
+  var inferenceEl = document.getElementById("inferenceDisplay");
+  var inferenceFillEl = document.getElementById("inferenceFill");
+  var versionEl = document.getElementById("passportVersion");
+  var typeEl = document.getElementById("passportType");
+  var creatorEl = document.getElementById("passportCreator");
+  var contractEl = document.getElementById("passportContract");
+  var sigilEl = document.getElementById("agentSigil");
 
   if (!info) {
-    var msg = el("div", "", "Agent not minted yet");
-    msg.style.color = "var(--muted)";
-    container.appendChild(msg);
+    if (nameEl) nameEl.textContent = "Agent not minted yet";
+    if (tokenIdEl) tokenIdEl.textContent = "----";
     return;
   }
 
-  var addRow = function(label, value, isLink, href) {
-    var row = el("div", "");
-    row.style.cssText = "margin-bottom:6px;font-size:12px;line-height:1.5";
-    var lbl = el("span", "", label + ": ");
-    lbl.style.color = "var(--muted)";
-    row.appendChild(lbl);
-    if (isLink && href) {
-      var a = el("a", "", value);
-      a.href = href;
-      a.target = "_blank";
-      a.style.color = "var(--blue)";
-      a.style.textDecoration = "none";
-      row.appendChild(a);
-    } else {
-      var val = el("span", "", value);
-      val.style.color = "var(--text)";
-      row.appendChild(val);
+  // 印记 SVG（使用 DOMParser 避免 innerHTML XSS 担忧）
+  if (sigilEl) {
+    clear(sigilEl);
+    var parser = new DOMParser();
+    var svgDoc = parser.parseFromString(generateSigil(AGENT_TOKEN_ID), "image/svg+xml");
+    var svgNode = svgDoc.documentElement;
+    if (svgNode && svgNode.nodeName === "svg") {
+      sigilEl.appendChild(svgNode);
     }
-    container.appendChild(row);
-  };
+  }
 
-  addRow("Name", info.name);
-  addRow("Token ID", "#" + AGENT_TOKEN_ID);
-  addRow("Version", info.version);
-  addRow("Model Type", info.modelType);
-  addRow("Inferences", String(info.totalInferences));
-  addRow("Creator", info.creator.slice(0, 8) + "..." + info.creator.slice(-6), true, EXPLORER + "/address/" + info.creator);
-  addRow("Contract", AGENT_INFT.slice(0, 8) + "..." + AGENT_INFT.slice(-6), true, EXPLORER + "/address/" + AGENT_INFT);
+  // Token ID
+  var paddedId = String(AGENT_TOKEN_ID).padStart(4, "0");
+  if (tokenIdEl) tokenIdEl.textContent = paddedId;
+
+  // 名字
+  if (nameEl) nameEl.textContent = info.name;
+
+  // 状态 — 有推理记录才显示 LIVE
+  if (statusEl) {
+    statusEl.style.display = info.totalInferences > 0 ? "inline-flex" : "none";
+  }
+
+  // 推理计数器（带数字动画）
+  if (inferenceEl) {
+    animateNumber(inferenceEl, info.totalInferences);
+  }
+  if (inferenceFillEl) {
+    // 用 log 比例让数字好看（1→10%, 10→50%, 100→85%, 1000→100%）
+    var pct = Math.min(100, Math.log10(info.totalInferences + 1) * 33);
+    inferenceFillEl.style.width = pct + "%";
+  }
+
+  // 元信息
+  if (versionEl) versionEl.textContent = info.version;
+  if (typeEl) typeEl.textContent = info.modelType;
+  if (creatorEl) {
+    creatorEl.textContent = info.creator.slice(0, 6) + "···" + info.creator.slice(-4);
+    creatorEl.href = EXPLORER + "/address/" + info.creator;
+  }
+  if (contractEl) {
+    contractEl.textContent = AGENT_INFT.slice(0, 6) + "···" + AGENT_INFT.slice(-4);
+    contractEl.href = EXPLORER + "/address/" + AGENT_INFT;
+  }
 }
 
 loadDashboard();

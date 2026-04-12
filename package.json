@@ -12,6 +12,7 @@
     "deploy-agent": "forge script script/DeployAgentINFT.s.sol --rpc-url $OG_RPC_URL --broadcast --private-key $PRIVATE_KEY --legacy --with-gas-price 3000000000",
     "mint-agent": "ts-node src/tools/mintAgent.ts",
     "fetch-log": "ts-node src/tools/fetchLog.ts",
+    "claim-faucets": "ts-node src/tools/claimFaucets.ts",
     "compile": "forge build"
   },
   "keywords": [
