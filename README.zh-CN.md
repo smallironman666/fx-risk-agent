@@ -22,8 +22,14 @@
 
 - **Demo 视频**: [在 YouTube 观看 (2:37)](https://youtu.be/j2eaoJN18a8)
 - **Dashboard**: [http://124.223.198.204:9088](http://124.223.198.204:9088)
-- **合约地址（Galileo 测试网）**: [`0x12030bc39dd18E2e8e4F10e685b7B7E639F0925A`](https://chainscan-galileo.0g.ai/address/0x12030bc39dd18E2e8e4F10e685b7B7E639F0925A)
-- **区块浏览器**: [在 0G Chain 上查看](https://chainscan-galileo.0g.ai/address/0x12030bc39dd18E2e8e4F10e685b7B7E639F0925A)
+
+**链上合约（0G Galileo 测试网，Chain ID 16602）：**
+
+| 合约 | 地址 | 用途 |
+|---|---|---|
+| **FXRiskOracleV2** | [`0x2ddfe5669e712d31d8013ebf3034ea72d668c6bf`](https://chainscan-galileo.0g.ai/address/0x2ddfe5669e712d31d8013ebf3034ea72d668c6bf) | 主力合约（带 Agent ID + AI 后端标识） |
+| **FXRiskAgentINFT** | [`0xcf9b3d3ea674853dfc9031fbb6ac2e3de9ca6cd2`](https://chainscan-galileo.0g.ai/address/0xcf9b3d3ea674853dfc9031fbb6ac2e3de9ca6cd2) | Agent 身份（ERC-7857 启发的 INFT） |
+| **FXRiskOracle V1** | [`0x12030bc39dd18E2e8e4F10e685b7B7E639F0925A`](https://chainscan-galileo.0g.ai/address/0x12030bc39dd18E2e8e4F10e685b7B7E639F0925A) | 历史审计数据（保留不变） |
 
 ## 问题背景
 
@@ -68,12 +74,12 @@ flowchart TD
 
 ## 为什么选 0G？
 
-| 0G 组件 | 我们如何使用 | 为什么必须用 0G |
+| 0G 组件 | 状态 | 我们如何使用 |
 |---|---|---|
-| **0G Storage** | 永久存档完整 AI 决策日志（含推理过程的 JSON） | 不可篡改的审计链路 —— 无法悄悄修改 AI 当时说过什么 |
-| **0G Chain** | FXRiskOracle 合约记录风险预警与 Storage rootHash | 可验证的证据，证明告警在特定时刻确实存在 |
-| **0G Compute** *(路线图)* | Sealed Inference 用于机密外汇敞口分析 | 防止交易策略被抢跑 |
-| **Agent ID** *(路线图)* | 可追溯的自主 Agent 身份 | 证明是哪个 Agent 做出了哪个决策 |
+| **0G Storage** | 已集成 | 永久存档完整 AI 决策日志（含推理过程的 JSON）—— 不可篡改的审计链路 |
+| **0G Chain** | 已集成 | FXRiskOracleV2 合约记录风险预警，关联 Storage rootHash + Agent ID |
+| **0G Compute** | 已集成 | 双后端 AI：豆包（默认，高质量）+ 0G Compute（Qwen 2.5 7B 跑在 TEE 里），通过 `AI_BACKEND` 环境变量切换 |
+| **Agent ID (ERC-7857 INFT)** | 已集成 | FXRiskAgentINFT 将 Agent 身份代币化。每次推理链上自增 `inferenceCount`，每条告警都关联 Agent `tokenId=0` |
 
 ## 0G 集成验证路径
 
@@ -153,21 +159,76 @@ npx ts-node src/tools/fetchLog.ts 0x526564ff261184de3fd17c90500c66aef0cee9f14e6f
 
 - [x] AI 风险分析与可验证决策日志
 - [x] 0G Storage 集成（永久审计链路）
-- [x] 链上告警记录（FXRiskOracle 合约）
+- [x] 链上告警记录（FXRiskOracle V1 + V2 合约）
 - [x] HIGH/CRITICAL 事件 Webhook 告警
-- [x] Web Dashboard（可验证风控驾驶舱）
+- [x] Web Dashboard（V1/V2 合并 + Agent 徽章可视化）
 - [x] CLI 工具：通过 rootHash 从 Storage 下载完整 AI 日志
+- [x] **0G Compute 集成**（双后端：豆包 + 0G Compute Qwen 2.5 7B with TEE）
+- [x] **0G Agent ID**（ERC-7857 INFT，链上 `inferenceCount`，可追溯身份）
 - [ ] 接入真实外汇行情源（Alpha Vantage / Twelve Data）
-- [ ] 0G Compute：Sealed Inference 保护策略隐私
-- [ ] 0G Agent ID：可追溯的自主 Agent 身份
+- [ ] 0G Compute Sealed Inference 保护交易策略（主网 TEE）
 - [ ] 部署至主网
 - [ ] 多 Agent 协作（每个货币对独立 Agent）
+
+## Agent ID (ERC-7857 INFT)
+
+Agent 拥有**一等公民的链上身份**。这不只是元数据 —— 是被代币化的 AI 资产：
+
+```
+FXRiskAgentINFT 合约: 0xcf9b3d3ea674853dfc9031fbb6ac2e3de9ca6cd2
+Agent Token ID: #0
+名称: "FX Risk Agent"
+版本: v0.2.0
+模型类型: fx-risk-inference
+Storage Root: 0x6a271e80f82f8bea... (指向 0G Storage 上的完整元数据 JSON)
+```
+
+**每次会话更新链上状态**：
+- 会话摘要（处理的货币对、决策日志哈希列表）上传到 0G Storage
+- 调用 `FXRiskAgentINFT.updateAgentState(tokenId, sessionRootHash)`
+- 链上 `inferenceCount` 自增 —— Agent 活动历史可验证
+
+**每条 V2 告警都关联 Agent ID**：
+```solidity
+submitAlert(pair, level, rate, threshold, rootHash, agentTokenId, aiBackend)
+```
+
+**价值**：
+- **可问责**：任何决策都可追溯到具体 Agent 版本 + 签名过的系统 prompt
+- **可交易**：未来 AI-as-an-asset 模型 —— INFT 可转让/授权
+- **可审计**：监管可通过 `getAgent(tokenId)` 查询完整元数据
+
+## 双 AI 后端
+
+通过 `AI_BACKEND` 环境变量切换两个后端：
+
+```bash
+# 豆包（默认）—— 高质量中文 AI，用于 Demo
+AI_BACKEND=doubao npm run agent
+
+# 0G Compute —— 去中心化 AI 推理
+AI_BACKEND=0g-compute npm run agent
+```
+
+| 后端 | 模型 | 验证方式 | 场景 |
+|---|---|---|---|
+| `doubao` | 豆包 Seed 2.0 Pro | OpenAI 兼容 API | 生产 Demo，推理质量最好 |
+| `0g-compute` | Qwen 2.5 7B（testnet）/ GLM-5（mainnet） | **TEE Sealed Inference**（硬件加密证明） | 隐私保护的策略执行 |
+
+`0g-compute` 后端的每个 AI 响应都会：
+1. 在硬件 TEE 中执行（Intel TDX + NVIDIA GPU）
+2. 由 provider 的 enclave 密钥做硬件签名
+3. 通过 `broker.inference.processResponse()` 验证 —— 返回 `verified: true/false`
+
+存储到 0G Storage 的 `DecisionLog` 包含 `inferenceVerification` 字段（含 chatId + 验证结果）。
 
 ## 已知限制
 
 - 当前使用模拟外汇数据（生产环境会接入真实 API）
+- 0G Compute testnet 仅有 Qwen 2.5 7B（质量弱于豆包 Seed 2.0 Pro），mainnet 有 GLM-5、DeepSeek V3.1
 - StorageScan 暂不支持通过 rootHash 直接定位文件
 - 尚无自动化测试套件（最终提交时会补充）
+- 未部署到 mainnet（需真实 0G 代币，计划 5/16 前完成）
 
 ## 关于
 

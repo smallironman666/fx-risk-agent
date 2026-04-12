@@ -187,8 +187,13 @@
 <!-- ===== Main 3-Column Layout ===== -->
 <div class="main">
 
-  <!-- Left: Currency Pairs -->
+  <!-- Left: Agent Identity + Currency Pairs -->
   <div class="left">
+    <h2>Agent Identity</h2>
+    <div id="agentIdentity" class="pair-card" style="margin-bottom:16px">
+      <div style="color:var(--muted);font-size:12px">Loading...</div>
+    </div>
+
     <h2>Currency Pairs</h2>
     <div id="pairsList"></div>
   </div>
@@ -220,18 +225,39 @@
 </div>
 
 <script>
-var CONTRACT_ADDRESS = "0x12030bc39dd18E2e8e4F10e685b7B7E639F0925A";
+var CONTRACT_V1 = "0x12030bc39dd18E2e8e4F10e685b7B7E639F0925A";
+var CONTRACT_V2 = "0x2ddfe5669e712d31d8013ebf3034ea72d668c6bf";
+var AGENT_INFT = "0xcf9b3d3ea674853dfc9031fbb6ac2e3de9ca6cd2";
+var AGENT_TOKEN_ID = 0;
 var RPC_URL = "https://evmrpc-testnet.0g.ai";
 var EXPLORER = "https://chainscan-galileo.0g.ai";
 
-var ABI = [
+// 保留 V1 变量名以兼容旧代码
+var CONTRACT_ADDRESS = CONTRACT_V2;
+
+var ABI_V1 = [
   "function getAlertCount() view returns (uint256)",
-  "function alerts(uint256) view returns (string currencyPair, uint8 level, uint256 spotRate, uint256 threshold, bytes32 storageRootHash, uint256 timestamp, address reporter)",
   "function getLatestAlerts(uint256 count) view returns (tuple(string currencyPair, uint8 level, uint256 spotRate, uint256 threshold, bytes32 storageRootHash, uint256 timestamp, address reporter)[])",
 ];
 
+var ABI_V2 = [
+  "function getAlertCount() view returns (uint256)",
+  "function getLatestAlerts(uint256 count) view returns (tuple(string currencyPair, uint8 level, uint256 spotRate, uint256 threshold, bytes32 storageRootHash, uint256 timestamp, address reporter, uint256 agentTokenId, string aiBackend)[])",
+  "function alertCountByAgent(uint256) view returns (uint256)",
+];
+
+var AGENT_ABI = [
+  "function getAgent(uint256 tokenId) view returns (tuple(string agentName, string version, string modelType, bytes32 storageRootHash, uint256 createdAt, address creator) meta, uint256 totalInferences, uint256 lastUpdate)",
+  "function inferenceCount(uint256) view returns (uint256)",
+  "function totalSupply() view returns (uint256)",
+];
+
+// 兼容旧代码
+var ABI = ABI_V2;
+
 var LEVELS = ["LOW", "MEDIUM", "HIGH", "CRITICAL"];
 var alertsData = [];
+var agentInfo = null; // 缓存Agent身份信息
 
 function f6(val) { return (Number(val) / 1000000).toFixed(4); }
 function ftime(ts) { return new Date(Number(ts) * 1000).toLocaleString(); }
@@ -329,6 +355,24 @@ function renderTimeline(alerts) {
     var left = el("div", "");
     left.appendChild(el("span", "tl-pair", a.currencyPair + " "));
     left.appendChild(el("span", "badge badge-" + level, level));
+
+    // V2 特有：Agent 徽章 + Backend 徽章
+    if (a.version === "v2" && a.agentTokenId !== null && a.agentTokenId !== undefined) {
+      var agentBadge = el("span", "", " Agent #" + a.agentTokenId);
+      agentBadge.style.cssText = "margin-left:6px;padding:2px 8px;border-radius:3px;background:rgba(139,92,246,0.15);color:var(--purple);font-size:10px;font-weight:700";
+      left.appendChild(agentBadge);
+
+      if (a.aiBackend) {
+        var backendBadge = el("span", "", a.aiBackend);
+        backendBadge.style.cssText = "margin-left:4px;padding:2px 8px;border-radius:3px;background:rgba(6,182,212,0.15);color:var(--cyan);font-size:10px;font-weight:600";
+        left.appendChild(backendBadge);
+      }
+    } else if (a.version === "v1") {
+      var legacyBadge = el("span", "", " V1");
+      legacyBadge.style.cssText = "margin-left:6px;padding:2px 8px;border-radius:3px;background:rgba(107,114,128,0.15);color:var(--muted);font-size:10px";
+      left.appendChild(legacyBadge);
+    }
+
     header.appendChild(left);
     header.appendChild(el("span", "tl-time", ftime(a.timestamp)));
     card.appendChild(header);
@@ -477,56 +521,118 @@ function showAIDetail(alert) {
 async function loadDashboard() {
   try {
     var provider = new ethers.JsonRpcProvider(RPC_URL);
-    var contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, provider);
+    var v1Contract = new ethers.Contract(CONTRACT_V1, ABI_V1, provider);
+    var v2Contract = new ethers.Contract(CONTRACT_V2, ABI_V2, provider);
+    var agentContract = new ethers.Contract(AGENT_INFT, AGENT_ABI, provider);
 
-    var count = Number(await contract.getAlertCount());
+    // 并行读取 V1 + V2 + Agent 数据
+    var results = await Promise.allSettled([
+      v1Contract.getAlertCount(),
+      v2Contract.getAlertCount(),
+      agentContract.getAgent(AGENT_TOKEN_ID),
+    ]);
 
-    // Top bar
-    document.getElementById("topAlertCount").textContent = count;
-    var topC = document.getElementById("topContract");
-    topC.textContent = CONTRACT_ADDRESS.slice(0, 8) + "..." + CONTRACT_ADDRESS.slice(-6);
-    topC.style.cursor = "pointer";
-    topC.onclick = function() { window.open(EXPLORER + "/address/" + CONTRACT_ADDRESS, "_blank"); };
+    var v1Count = results[0].status === "fulfilled" ? Number(results[0].value) : 0;
+    var v2Count = results[1].status === "fulfilled" ? Number(results[1].value) : 0;
+    var agentData = results[2].status === "fulfilled" ? results[2].value : null;
 
-    // Stats
-    document.getElementById("statTotal").textContent = count;
-
-    if (count === 0) {
-      document.getElementById("statHigh").textContent = "0";
-      document.getElementById("statPairs").textContent = "0";
-      document.getElementById("statTime").textContent = "-";
-      renderPairCards([]);
-      renderTimeline([]);
-      return;
+    // 解析 Agent 信息
+    if (agentData) {
+      agentInfo = {
+        name: agentData[0][0],
+        version: agentData[0][1],
+        modelType: agentData[0][2],
+        storageRootHash: agentData[0][3],
+        createdAt: Number(agentData[0][4]),
+        creator: agentData[0][5],
+        totalInferences: Number(agentData[1]),
+        lastUpdate: Number(agentData[2]),
+      };
     }
 
-    var fetchCount = Math.min(count, 20);
-    var alerts = await contract.getLatestAlerts(fetchCount);
+    // 并行读取 V1 + V2 的 alerts
+    var totalCount = v1Count + v2Count;
+    var alertResults = await Promise.allSettled([
+      v1Count > 0 ? v1Contract.getLatestAlerts(Math.min(v1Count, 20)) : Promise.resolve([]),
+      v2Count > 0 ? v2Contract.getLatestAlerts(Math.min(v2Count, 20)) : Promise.resolve([]),
+    ]);
 
-    // 转为普通对象
+    var v1Alerts = alertResults[0].status === "fulfilled" ? alertResults[0].value : [];
+    var v2Alerts = alertResults[1].status === "fulfilled" ? alertResults[1].value : [];
+
     alertsData = [];
     var highCount = 0;
     var pairs = {};
 
-    for (var i = 0; i < alerts.length; i++) {
-      var a = alerts[i];
+    // V1 alerts（无 Agent 信息）
+    for (var i = 0; i < v1Alerts.length; i++) {
+      var a = v1Alerts[i];
       var level = Number(a.level);
       if (level >= 2) highCount++;
       pairs[a.currencyPair] = true;
-
       alertsData.push({
+        version: "v1",
         currencyPair: a.currencyPair,
         level: a.level,
         spotRate: a.spotRate,
         threshold: a.threshold,
         storageRootHash: a.storageRootHash,
         timestamp: a.timestamp,
-        reporter: a.reporter
+        reporter: a.reporter,
+        agentTokenId: null,
+        aiBackend: null,
       });
     }
 
+    // V2 alerts（带 Agent ID + backend）
+    for (var j = 0; j < v2Alerts.length; j++) {
+      var b = v2Alerts[j];
+      var lvl = Number(b.level);
+      if (lvl >= 2) highCount++;
+      pairs[b.currencyPair] = true;
+      alertsData.push({
+        version: "v2",
+        currencyPair: b.currencyPair,
+        level: b.level,
+        spotRate: b.spotRate,
+        threshold: b.threshold,
+        storageRootHash: b.storageRootHash,
+        timestamp: b.timestamp,
+        reporter: b.reporter,
+        agentTokenId: Number(b.agentTokenId),
+        aiBackend: b.aiBackend,
+      });
+    }
+
+    // 更新顶部栏
+    var topC = document.getElementById("topContract");
+    if (agentInfo) {
+      topC.textContent = "#" + AGENT_TOKEN_ID + " | " + agentInfo.name;
+      topC.style.cursor = "pointer";
+      topC.onclick = function() { window.open(EXPLORER + "/address/" + AGENT_INFT, "_blank"); };
+    } else {
+      topC.textContent = CONTRACT_V2.slice(0, 8) + "..." + CONTRACT_V2.slice(-6);
+      topC.onclick = function() { window.open(EXPLORER + "/address/" + CONTRACT_V2, "_blank"); };
+    }
+    document.getElementById("topAlertCount").textContent = totalCount + " (V1: " + v1Count + " | V2: " + v2Count + ")";
+
+    var agentStatusEl = document.getElementById("agentStatus");
+    if (agentInfo) {
+      agentStatusEl.textContent = "Agent #" + AGENT_TOKEN_ID + " | " + agentInfo.totalInferences + " sessions";
+    }
+
+    // 统计卡片
+    document.getElementById("statTotal").textContent = totalCount;
     document.getElementById("statHigh").textContent = highCount;
     document.getElementById("statPairs").textContent = Object.keys(pairs).length;
+
+    if (alertsData.length === 0) {
+      document.getElementById("statTime").textContent = "-";
+      renderAgentCard(agentInfo);
+      renderPairCards([]);
+      renderTimeline([]);
+      return;
+    }
 
     var latestTs = 0;
     alertsData.forEach(function(a) {
@@ -534,8 +640,8 @@ async function loadDashboard() {
       if (t > latestTs) latestTs = t;
     });
     document.getElementById("statTime").textContent = latestTs > 0 ? ftime(latestTs) : "-";
-    document.getElementById("agentStatus").textContent = "Last run " + ftime(latestTs);
 
+    renderAgentCard(agentInfo);
     renderPairCards(alertsData);
     renderTimeline(alertsData);
 
@@ -546,6 +652,49 @@ async function loadDashboard() {
     errDiv.style.color = "var(--red)";
     tl.appendChild(errDiv);
   }
+}
+
+// Agent Identity 卡片渲染
+function renderAgentCard(info) {
+  var container = document.getElementById("agentIdentity");
+  if (!container) return;
+  clear(container);
+
+  if (!info) {
+    var msg = el("div", "", "Agent not minted yet");
+    msg.style.color = "var(--muted)";
+    container.appendChild(msg);
+    return;
+  }
+
+  var addRow = function(label, value, isLink, href) {
+    var row = el("div", "");
+    row.style.cssText = "margin-bottom:6px;font-size:12px;line-height:1.5";
+    var lbl = el("span", "", label + ": ");
+    lbl.style.color = "var(--muted)";
+    row.appendChild(lbl);
+    if (isLink && href) {
+      var a = el("a", "", value);
+      a.href = href;
+      a.target = "_blank";
+      a.style.color = "var(--blue)";
+      a.style.textDecoration = "none";
+      row.appendChild(a);
+    } else {
+      var val = el("span", "", value);
+      val.style.color = "var(--text)";
+      row.appendChild(val);
+    }
+    container.appendChild(row);
+  };
+
+  addRow("Name", info.name);
+  addRow("Token ID", "#" + AGENT_TOKEN_ID);
+  addRow("Version", info.version);
+  addRow("Model Type", info.modelType);
+  addRow("Inferences", String(info.totalInferences));
+  addRow("Creator", info.creator.slice(0, 8) + "..." + info.creator.slice(-6), true, EXPLORER + "/address/" + info.creator);
+  addRow("Contract", AGENT_INFT.slice(0, 8) + "..." + AGENT_INFT.slice(-6), true, EXPLORER + "/address/" + AGENT_INFT);
 }
 
 loadDashboard();

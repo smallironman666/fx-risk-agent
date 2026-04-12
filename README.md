@@ -22,8 +22,14 @@
 
 - **Demo Video**: [Watch on YouTube (2:37)](https://youtu.be/j2eaoJN18a8)
 - **Dashboard**: [http://124.223.198.204:9088](http://124.223.198.204:9088)
-- **Contract (Galileo Testnet)**: [`0x12030bc39dd18E2e8e4F10e685b7B7E639F0925A`](https://chainscan-galileo.0g.ai/address/0x12030bc39dd18E2e8e4F10e685b7B7E639F0925A)
-- **Explorer**: [View on 0G Chain](https://chainscan-galileo.0g.ai/address/0x12030bc39dd18E2e8e4F10e685b7B7E639F0925A)
+
+**On-Chain Contracts (0G Galileo Testnet, Chain ID 16602):**
+
+| Contract | Address | Role |
+|---|---|---|
+| **FXRiskOracleV2** | [`0x2ddfe5669e712d31d8013ebf3034ea72d668c6bf`](https://chainscan-galileo.0g.ai/address/0x2ddfe5669e712d31d8013ebf3034ea72d668c6bf) | Primary oracle with Agent ID linkage |
+| **FXRiskAgentINFT** | [`0xcf9b3d3ea674853dfc9031fbb6ac2e3de9ca6cd2`](https://chainscan-galileo.0g.ai/address/0xcf9b3d3ea674853dfc9031fbb6ac2e3de9ca6cd2) | Agent identity (ERC-7857 inspired INFT) |
+| **FXRiskOracle V1** | [`0x12030bc39dd18E2e8e4F10e685b7B7E639F0925A`](https://chainscan-galileo.0g.ai/address/0x12030bc39dd18E2e8e4F10e685b7B7E639F0925A) | Legacy (historical audit trail) |
 
 ## Problem
 
@@ -68,12 +74,12 @@ flowchart TD
 
 ## Why 0G?
 
-| 0G Component | What We Use It For | Why It's Essential |
+| 0G Component | Status | What We Use It For |
 |---|---|---|
-| **0G Storage** | Permanent archive of full AI decision logs (JSON with reasoning) | Tamper-proof audit trail — can't silently edit what the AI said |
-| **0G Chain** | FXRiskOracle contract records risk alerts with Storage rootHash | Verifiable proof that the alert existed at a specific time |
-| **0G Compute** *(roadmap)* | Sealed Inference for confidential FX exposure analysis | Prevents front-running of trading strategies |
-| **Agent ID** *(roadmap)* | Accountable autonomous agent identity | Proves which agent made which decision |
+| **0G Storage** | Integrated | Permanent archive of full AI decision logs (JSON with reasoning) — tamper-proof audit trail |
+| **0G Chain** | Integrated | FXRiskOracleV2 contract records risk alerts with Storage rootHash + Agent ID linkage |
+| **0G Compute** | Integrated | Dual-backend AI: Doubao (default, high-quality) and 0G Compute (Qwen 2.5 7B on TEE). Switchable via `AI_BACKEND` env var |
+| **Agent ID (ERC-7857 INFT)** | Integrated | FXRiskAgentINFT tokenizes the agent's identity. Every inference updates the on-chain `inferenceCount`. Each alert links to Agent `tokenId=0` |
 
 ## 0G Integration Verification
 
@@ -153,21 +159,77 @@ npx ts-node src/tools/fetchLog.ts 0x526564ff261184de3fd17c90500c66aef0cee9f14e6f
 
 - [x] AI risk analysis with verifiable decision logs
 - [x] 0G Storage integration (permanent audit trail)
-- [x] On-chain alert recording (FXRiskOracle contract)
+- [x] On-chain alert recording (FXRiskOracle V1 + V2 contracts)
 - [x] Webhook alerting for HIGH/CRITICAL events
-- [x] Web dashboard (verifiable risk cockpit)
+- [x] Web dashboard (verifiable risk cockpit with V1/V2 merge + Agent badges)
 - [x] CLI tool: fetch full AI log from 0G Storage by rootHash
+- [x] **0G Compute integration** (dual-backend: Doubao + 0G Compute Qwen 2.5 7B with TEE)
+- [x] **0G Agent ID** (ERC-7857 INFT, on-chain `inferenceCount`, accountable identity)
 - [ ] Real FX data feed (Alpha Vantage / Twelve Data)
-- [ ] 0G Compute: Sealed Inference for strategy privacy
-- [ ] 0G Agent ID: accountable autonomous agent identity
+- [ ] 0G Compute Sealed Inference for strategy privacy (mainnet TEE)
 - [ ] Mainnet deployment
 - [ ] Multi-agent collaboration per currency corridor
 
+## Agent ID (ERC-7857 INFT)
+
+The agent has a **first-class on-chain identity**. This isn't just metadata — it's a tokenized AI asset:
+
+```
+FXRiskAgentINFT contract: 0xcf9b3d3ea674853dfc9031fbb6ac2e3de9ca6cd2
+Agent Token ID: #0
+Name: "FX Risk Agent"
+Version: v0.2.0
+Model Type: fx-risk-inference
+Storage Root: 0x6a271e80f82f8bea6997756e9719ccf25587aaa3313c85c03bf89e4550729d96
+             (points to full metadata JSON on 0G Storage)
+```
+
+**Every session updates on-chain state**:
+- Session summary (processed pairs, decision log hashes) uploaded to 0G Storage
+- `FXRiskAgentINFT.updateAgentState(tokenId, sessionRootHash)` called
+- `inferenceCount` increments on-chain — provable history of agent activity
+
+**Every V2 alert is linked to the Agent ID**:
+```solidity
+submitAlert(pair, level, rate, threshold, rootHash, agentTokenId, aiBackend)
+```
+
+**Why this matters**:
+- **Accountability**: Any decision is traceable to a specific agent version with a signed system prompt
+- **Tradeability**: Future AI-as-an-asset models — the INFT can be transferred/licensed
+- **Auditability**: Regulators can query `getAgent(tokenId)` for full metadata
+
+## Dual AI Backend
+
+Switch between two AI backends via `AI_BACKEND` env variable:
+
+```bash
+# Doubao (default) — high-quality Chinese AI, used for demo
+AI_BACKEND=doubao npm run agent
+
+# 0G Compute — decentralized inference on 0G Network
+AI_BACKEND=0g-compute npm run agent
+```
+
+| Backend | Model | Verification | Use Case |
+|---|---|---|---|
+| `doubao` | Doubao Seed 2.0 Pro | OpenAI-compatible API | Production demo with best reasoning quality |
+| `0g-compute` | Qwen 2.5 7B (testnet) / GLM-5 (mainnet) | **TEE Sealed Inference** (cryptographic proof) | Privacy-preserving strategy execution |
+
+Every AI response from `0g-compute` backend is:
+1. Executed inside a hardware TEE (Intel TDX + NVIDIA GPU)
+2. Cryptographically signed by the provider's enclave key
+3. Verified via `broker.inference.processResponse()` — returns `verified: true/false`
+
+The `DecisionLog` stored on 0G Storage includes the `inferenceVerification` field with the chat ID and verification result.
+
 ## Known Limitations
 
-- FX data is currently simulated (production would use real API feeds)
+- FX data is currently simulated (production would use real API feeds like Alpha Vantage)
+- 0G Compute on testnet only offers Qwen 2.5 7B (weaker than Doubao Seed 2.0 Pro); mainnet has GLM-5, DeepSeek V3.1
 - StorageScan does not support direct file lookup by root hash via URL
 - No automated test suite yet (planned for final submission)
+- Not deployed to mainnet (requires real 0G tokens, planned before May 16)
 
 ## About
 

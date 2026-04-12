@@ -1,5 +1,5 @@
-import OpenAI from "openai";
 import { FXQuote, RiskAssessment, RiskLevel, RiskThreshold } from "./types";
+import { LLMBackend } from "./llm/types";
 
 const SYSTEM_PROMPT = `You are an expert FX Risk Analyst AI Agent working for a cross-border payment company.
 Your job is to analyze foreign exchange market data and assess risk levels for currency pairs.
@@ -25,43 +25,30 @@ Risk level criteria:
 - HIGH: Rate breached threshold or volatility spike detected
 - CRITICAL: Multiple indicators triggered, immediate action required`;
 
-// AI模型配置（支持豆包/Claude/任意OpenAI兼容API）
-const AI_BASE_URL = process.env.AI_BASE_URL || "https://ark.cn-beijing.volces.com/api/v3";
-const AI_API_KEY = process.env.AI_API_KEY || "";
-const AI_MODEL = process.env.AI_MODEL || "doubao-1-5-pro-256k-250115";
-
 /**
- * 使用AI分析FX行情，生成风险评估
- * 支持豆包（火山方舟）/ Claude / 任意OpenAI兼容API
+ * 使用指定的 LLM 后端分析 FX 行情，生成风险评估
+ * @param quotes    FX 行情历史数据
+ * @param thresholds 风险阈值配置
+ * @param backend   LLM 后端（支持 Doubao / 0G Compute 等）
  */
 export async function analyzeRisk(
   quotes: FXQuote[],
-  thresholds: RiskThreshold
+  thresholds: RiskThreshold,
+  backend: LLMBackend
 ): Promise<RiskAssessment> {
-  const client = new OpenAI({
-    baseURL: AI_BASE_URL,
-    apiKey: AI_API_KEY,
-  });
   const pair = thresholds.currencyPair;
   const latestQuote = quotes[quotes.length - 1];
-
   const userPrompt = buildAnalysisPrompt(quotes, thresholds);
 
-  const response = await client.chat.completions.create({
-    model: AI_MODEL,
-    max_tokens: 1024,
+  const response = await backend.chat({
     messages: [
       { role: "system", content: SYSTEM_PROMPT },
       { role: "user", content: userPrompt },
     ],
+    maxTokens: 1024,
   });
 
-  const content = response.choices[0]?.message?.content;
-  if (!content) {
-    throw new Error("Empty response from AI API");
-  }
-
-  const parsed = parseAnalysisResponse(content);
+  const parsed = parseAnalysisResponse(response.content);
 
   return {
     currencyPair: pair,
@@ -73,7 +60,11 @@ export async function analyzeRisk(
     confidence: parsed.confidence,
     timestamp: Date.now(),
     quotes,
-  };
+    // 扩展字段（用于 DecisionLog）
+    backendLabel: backend.label,
+    usage: response.usage,
+    verification: response.verification,
+  } as RiskAssessment;
 }
 
 function buildAnalysisPrompt(quotes: FXQuote[], thresholds: RiskThreshold): string {
@@ -119,7 +110,7 @@ function parseAnalysisResponse(text: string): {
   recommendation: string;
   confidence: number;
 } {
-  // 优先匹配包含"level"字段的JSON对象（精确定位目标JSON）
+  // 优先匹配包含"level"字段的JSON对象
   const targetMatch = text.match(/\{[^{}]*"level"\s*:\s*"[^"]+?"[^{}]*\}/);
   const jsonMatch = targetMatch || text.match(/\{[\s\S]*\}/);
   if (!jsonMatch) {

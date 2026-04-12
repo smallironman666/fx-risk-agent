@@ -21,11 +21,11 @@ export class ZgStorageClient {
   }
 
   /**
-   * 将决策日志上传到0G Storage
+   * 通用 JSON 上传（供 DecisionLog / AgentMetadata / SessionSummary 共享）
    * @returns root hash（bytes32格式，可直接写入合约）
    */
-  async uploadDecisionLog(log: DecisionLog): Promise<string> {
-    const jsonData = JSON.stringify(log, null, 2);
+  async uploadJson<T>(payload: T): Promise<string> {
+    const jsonData = JSON.stringify(payload, null, 2);
     const encoder = new TextEncoder();
     const data = encoder.encode(jsonData);
 
@@ -42,6 +42,13 @@ export class ZgStorageClient {
     console.log(`[0G Storage] Root hash: ${uploadResult.rootHash}`);
 
     return uploadResult.rootHash;
+  }
+
+  /**
+   * 上传 DecisionLog（uploadJson 的语义别名，保持向后兼容）
+   */
+  async uploadDecisionLog(log: DecisionLog): Promise<string> {
+    return this.uploadJson(log);
   }
 
   /**

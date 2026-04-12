@@ -2,6 +2,8 @@
  * FX Risk Agent 核心类型定义
  */
 
+import type { BackendKind, ChatUsage, InferenceVerification } from "./llm/types";
+
 export enum RiskLevel {
   LOW = 0,
   MEDIUM = 1,
@@ -35,6 +37,11 @@ export interface RiskAssessment {
   confidence: number;       // 0-1
   timestamp: number;
   quotes: FXQuote[];        // 分析依据的行情数据
+
+  // LLM Backend 附加信息
+  backendLabel?: string;    // e.g. "doubao/doubao-seed-2-0-pro"
+  usage?: ChatUsage;
+  verification?: InferenceVerification;
 }
 
 export interface DecisionLog {
@@ -47,4 +54,26 @@ export interface DecisionLog {
   storageRootHash?: string;  // 上链后回填
   txHash?: string;           // 上链后回填
   createdAt: string;         // ISO 8601
+
+  // Agent ID 集成（V2 新增，向后兼容）
+  agentTokenId?: number;          // INFT tokenId
+  agentContract?: string;         // FXRiskAgentINFT 合约地址
+  aiBackend?: BackendKind;        // "doubao" | "0g-compute"
+  inferenceVerification?: InferenceVerification;
+  fallbackReason?: string;        // 如果后端降级，记录原因
+}
+
+/**
+ * Agent 会话摘要（用于 updateAgentState 的 Storage 引用）
+ */
+export interface AgentSessionSummary {
+  agentId: string;
+  agentTokenId: number;
+  sessionId: string;
+  aiBackend: BackendKind;
+  processedPairs: string[];
+  alertCount: number;
+  decisionLogRootHashes: string[];
+  createdAt: string;
+  inferenceCount?: number;  // 从链上读取
 }
