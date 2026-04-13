@@ -74,12 +74,14 @@ flowchart TD
 
 ## Why 0G?
 
-| 0G Component | Status | What We Use It For |
-|---|---|---|
-| **0G Storage** | Integrated | Permanent archive of full AI decision logs (JSON with reasoning) — tamper-proof audit trail |
-| **0G Chain** | Integrated | FXRiskOracleV2 contract records risk alerts with Storage rootHash + Agent ID linkage |
-| **0G Compute** | Integrated | Dual-backend AI: Doubao (default, high-quality) and 0G Compute (Qwen 2.5 7B on TEE). Switchable via `AI_BACKEND` env var |
-| **Agent ID (ERC-7857 INFT)** | Integrated | FXRiskAgentINFT tokenizes the agent's identity. Every inference updates the on-chain `inferenceCount`. Each alert links to Agent `tokenId=0` |
+| 0G Component | Status | What We Use It For | On-chain Proof |
+|---|---|---|---|
+| **0G Storage** | Live | Permanent archive of full AI decision logs (JSON with reasoning) — tamper-proof audit trail | Every alert's `storageRootHash` field |
+| **0G Chain** | Live | `FXRiskOracleV2` records alerts with `agentTokenId` + `aiBackend` fields; V1 preserved for audit continuity | [Contract `0x2ddfe5...`](https://chainscan-galileo.0g.ai/address/0x2ddfe5669e712d31d8013ebf3034ea72d668c6bf) |
+| **0G Compute** | Live | Dual-backend AI: Doubao (default) and **0G Compute Network** (Qwen 2.5 7B via provider `0xa48f012...`). Switchable via `AI_BACKEND=0g-compute` | Alerts where `aiBackend="0g-compute"` — fully on-chain settled via `ledger` + `inference` modules |
+| **Agent ID (ERC-7857 INFT)** | Live | `FXRiskAgentINFT` tokenizes agent identity. Every session calls `updateAgentState()` incrementing on-chain `inferenceCount`. | [`tokenId #0` on INFT contract](https://chainscan-galileo.0g.ai/address/0xcf9b3d3ea674853dfc9031fbb6ac2e3de9ca6cd2) |
+
+**Not integrated** (by design, see [ADR-004](./docs/adr/004-skip-tee-privacy.md)): Privacy / Secure Execution. Our use case is audit/transparency, not confidentiality.
 
 ## 0G Integration Verification
 
@@ -127,11 +129,19 @@ forge build
 source .env && forge script script/Deploy.s.sol \
   --rpc-url $OG_RPC_URL --broadcast --private-key $PRIVATE_KEY --legacy --with-gas-price 3000000000
 
-# Run the AI agent
+# Run the AI agent (default: Doubao backend)
 npm run agent
 
 # Run with specific scenario (for demo)
 npx ts-node src/index.ts --pair USD/CNY --scenario crisis
+
+# ---- Optional: switch to 0G Compute backend ----
+# One-time bootstrap: create ledger (3 OG) + fund provider sub-account (1 OG)
+# Requires ≥5 OG in wallet
+npm run bootstrap-compute
+
+# Then run agent with 0G Compute (Qwen 2.5 7B via provider TEE)
+AI_BACKEND=0g-compute npm run agent
 
 # Fetch full AI decision log from 0G Storage by rootHash
 npx ts-node src/tools/fetchLog.ts 0x526564ff261184de3fd17c90500c66aef0cee9f14e6fc12328b0abc35297fcdb
@@ -214,14 +224,15 @@ AI_BACKEND=0g-compute npm run agent
 | Backend | Model | Verification | Use Case |
 |---|---|---|---|
 | `doubao` | Doubao Seed 2.0 Pro | OpenAI-compatible API | Production demo with best reasoning quality |
-| `0g-compute` | Qwen 2.5 7B (testnet) / GLM-5 (mainnet) | **TEE Sealed Inference** (cryptographic proof) | Privacy-preserving strategy execution |
+| `0g-compute` | Qwen 2.5 7B (testnet) / GLM-5 (mainnet) | Decentralized inference with on-chain settlement | Demonstrate native 0G inference path; TEE verification available as a platform property, not the selection reason |
 
-Every AI response from `0g-compute` backend is:
-1. Executed inside a hardware TEE (Intel TDX + NVIDIA GPU)
-2. Cryptographically signed by the provider's enclave key
-3. Verified via `broker.inference.processResponse()` — returns `verified: true/false`
+**Why both backends, not just one?**
 
-The `DecisionLog` stored on 0G Storage includes the `inferenceVerification` field with the chat ID and verification result.
+We chose Doubao as the default because Qwen 2.5 7B (the only testnet model available on 0G Compute today) produces visibly weaker reasoning in demo videos. The `0g-compute` backend demonstrates that the agent can run on decentralized inference infrastructure with **on-chain settlement and verifiability** — useful for scenarios that require proof of "which model produced this output on which input".
+
+Every `0g-compute` response optionally passes through `broker.inference.processResponse(providerAddress, chatId)`, which returns a `verified: true/false` flag indicating whether the provider's hardware-signed attestation matched the response. This is recorded in `DecisionLog.inferenceVerification` — **not for privacy, but for integrity**.
+
+> **Note**: We deliberately did NOT check the "Privacy / Secure Execution" component on HackQuest. Our use case is audit/transparency, not confidentiality. See [ADR-004](./docs/adr/004-skip-tee-privacy.md) for the full reasoning.
 
 ## Testing
 

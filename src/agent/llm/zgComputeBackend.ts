@@ -156,8 +156,14 @@ export class ZgComputeBackend implements LLMBackend {
         );
       }
 
-      const chatId = response.headers.get("ZG-Res-Key") || undefined;
+      // ChatID 提取优先级：ZG-Res-Key header → zg-res-key header → data.id fallback
+      // 参考：0G Agent Skills 规范 (https://github.com/0gfoundation/0g-agent-skills)
       const data = await response.json() as any;
+      const chatId =
+        response.headers.get("ZG-Res-Key") ||
+        response.headers.get("zg-res-key") ||
+        data.id ||
+        undefined;
       const content = data.choices?.[0]?.message?.content;
       if (!content) {
         throw new BackendUnavailableError(this.kind, "Empty response content");

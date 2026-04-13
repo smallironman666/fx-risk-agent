@@ -74,12 +74,14 @@ flowchart TD
 
 ## 为什么选 0G？
 
-| 0G 组件 | 状态 | 我们如何使用 |
-|---|---|---|
-| **0G Storage** | 已集成 | 永久存档完整 AI 决策日志（含推理过程的 JSON）—— 不可篡改的审计链路 |
-| **0G Chain** | 已集成 | FXRiskOracleV2 合约记录风险预警，关联 Storage rootHash + Agent ID |
-| **0G Compute** | 已集成 | 双后端 AI：豆包（默认，高质量）+ 0G Compute（Qwen 2.5 7B 跑在 TEE 里），通过 `AI_BACKEND` 环境变量切换 |
-| **Agent ID (ERC-7857 INFT)** | 已集成 | FXRiskAgentINFT 将 Agent 身份代币化。每次推理链上自增 `inferenceCount`，每条告警都关联 Agent `tokenId=0` |
+| 0G 组件 | 状态 | 我们如何使用 | 链上证据 |
+|---|---|---|---|
+| **0G Storage** | Live | 永久存档完整 AI 决策日志（含推理过程的 JSON）—— 不可篡改的审计链路 | 每条 alert 的 `storageRootHash` 字段 |
+| **0G Chain** | Live | `FXRiskOracleV2` 合约记录告警，字段带 `agentTokenId` + `aiBackend`；V1 保留作为历史审计 | [合约 `0x2ddfe5...`](https://chainscan-galileo.0g.ai/address/0x2ddfe5669e712d31d8013ebf3034ea72d668c6bf) |
+| **0G Compute** | Live | 双后端 AI：豆包（默认）+ **0G Compute Network**（Qwen 2.5 7B，provider `0xa48f012...`）。通过 `AI_BACKEND=0g-compute` 切换 | aiBackend 字段为 `0g-compute` 的告警 —— 全程链上结算（`ledger` + `inference` 模块） |
+| **Agent ID (ERC-7857 INFT)** | Live | `FXRiskAgentINFT` 将 Agent 身份代币化。每次会话调用 `updateAgentState()` 使链上 `inferenceCount` 自增 | [INFT 合约 `tokenId #0`](https://chainscan-galileo.0g.ai/address/0xcf9b3d3ea674853dfc9031fbb6ac2e3de9ca6cd2) |
+
+**主动选择不集成**（见 [ADR-004](./docs/adr/004-skip-tee-privacy.md)）：Privacy / Secure Execution。我们的场景是审计/透明，不是保密。
 
 ## 0G 集成验证路径
 
@@ -127,11 +129,19 @@ forge build
 source .env && forge script script/Deploy.s.sol \
   --rpc-url $OG_RPC_URL --broadcast --private-key $PRIVATE_KEY --legacy --with-gas-price 3000000000
 
-# 运行 AI Agent
+# 运行 AI Agent（默认：豆包后端）
 npm run agent
 
 # 指定场景运行（演示用）
 npx ts-node src/index.ts --pair USD/CNY --scenario crisis
+
+# ---- 可选：切换到 0G Compute 后端 ----
+# 一次性 bootstrap：创建 ledger（3 OG）+ 给 provider 子账户充值（1 OG）
+# 钱包至少需要 5 OG
+npm run bootstrap-compute
+
+# 然后用 0G Compute 跑 Agent（Qwen 2.5 7B 在 provider TEE 里执行）
+AI_BACKEND=0g-compute npm run agent
 
 # 通过 rootHash 从 0G Storage 下载完整决策日志
 npx ts-node src/tools/fetchLog.ts 0x526564ff261184de3fd17c90500c66aef0cee9f14e6fc12328b0abc35297fcdb
@@ -213,14 +223,15 @@ AI_BACKEND=0g-compute npm run agent
 | 后端 | 模型 | 验证方式 | 场景 |
 |---|---|---|---|
 | `doubao` | 豆包 Seed 2.0 Pro | OpenAI 兼容 API | 生产 Demo，推理质量最好 |
-| `0g-compute` | Qwen 2.5 7B（testnet）/ GLM-5（mainnet） | **TEE Sealed Inference**（硬件加密证明） | 隐私保护的策略执行 |
+| `0g-compute` | Qwen 2.5 7B（testnet）/ GLM-5（mainnet） | 去中心化推理 + 链上结算 | 展示原生 0G 推理路径；TEE 验证是平台附带能力，不是选它的理由 |
 
-`0g-compute` 后端的每个 AI 响应都会：
-1. 在硬件 TEE 中执行（Intel TDX + NVIDIA GPU）
-2. 由 provider 的 enclave 密钥做硬件签名
-3. 通过 `broker.inference.processResponse()` 验证 —— 返回 `verified: true/false`
+**为什么保留双后端，而不是只用一个？**
 
-存储到 0G Storage 的 `DecisionLog` 包含 `inferenceVerification` 字段（含 chatId + 验证结果）。
+默认用豆包是因为 testnet 上 0G Compute 只有 Qwen 2.5 7B，Demo 视频里推理质量明显弱。`0g-compute` 后端证明 Agent 可以跑在去中心化推理基础设施上，带**链上结算和可验证性** —— 适合那些需要"证明是哪个模型在哪个输入上生成了这个输出"的场景。
+
+每个 `0g-compute` 响应**可选**通过 `broker.inference.processResponse(providerAddress, chatId)` 验证 provider 的硬件签名，返回 `verified: true/false`，写入 `DecisionLog.inferenceVerification` —— **不是为了隐私，而是为了完整性**。
+
+> **注意**：我们**刻意没有**在 HackQuest 勾选 "Privacy / Secure Execution" 组件。我们的场景是审计/透明，不是保密。详见 [ADR-004](./docs/adr/004-skip-tee-privacy.md)。
 
 ## 已知限制
 
