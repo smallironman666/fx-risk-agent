@@ -10,7 +10,7 @@
   <a href="https://youtu.be/j2eaoJN18a8">
     <img src="https://img.shields.io/badge/▶_Watch_Demo-YouTube-red?style=for-the-badge&logo=youtube" alt="Demo Video" />
   </a>
-  <a href="http://124.223.198.204:9088">
+  <a href="http://fx.0xsmall.com">
     <img src="https://img.shields.io/badge/📊_Live-Dashboard-blue?style=for-the-badge" alt="Live Dashboard" />
   </a>
   <a href="https://chainscan-galileo.0g.ai/address/0x12030bc39dd18E2e8e4F10e685b7B7E639F0925A">
@@ -21,7 +21,7 @@
 ## Live Demo
 
 - **Demo Video**: [Watch on YouTube (2:37)](https://youtu.be/j2eaoJN18a8)
-- **Dashboard**: [http://124.223.198.204:9088](http://124.223.198.204:9088)
+- **Dashboard**: [http://fx.0xsmall.com](http://fx.0xsmall.com)
 
 **On-Chain Contracts (0G Galileo Testnet, Chain ID 16602):**
 

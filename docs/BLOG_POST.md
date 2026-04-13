@@ -211,7 +211,7 @@ The gap between "AI makes decisions" and "AI decisions are auditable" is vast. P
 
 🐙 **GitHub**: [github.com/smallironman666/fx-risk-agent](https://github.com/smallironman666/fx-risk-agent)
 📹 **Demo Video**: [youtu.be/j2eaoJN18a8](https://youtu.be/j2eaoJN18a8)
-📊 **Live Dashboard**: [124.223.198.204:9088](http://124.223.198.204:9088)
+📊 **Live Dashboard**: [fx.0xsmall.com](http://fx.0xsmall.com)
 
 **On-chain verification**:
 - FXRiskOracleV2: [`0x2ddfe5669e712d31d8013ebf3034ea72d668c6bf`](https://chainscan-galileo.0g.ai/address/0x2ddfe5669e712d31d8013ebf3034ea72d668c6bf)
