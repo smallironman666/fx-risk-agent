@@ -27,8 +27,8 @@
 
 | 合约 | 地址 | 用途 |
 |---|---|---|
-| **FXRiskOracleV2** | [`0x565d563e18e0a6b3106e862709db6b6143b27999`](https://chainscan-galileo.0g.ai/address/0x565d563e18e0a6b3106e862709db6b6143b27999) | 主力合约（带 Agent ID + AI 后端标识） |
-| **FXRiskAgentINFT** | [`0xcf9b3d3ea674853dfc9031fbb6ac2e3de9ca6cd2`](https://chainscan-galileo.0g.ai/address/0xcf9b3d3ea674853dfc9031fbb6ac2e3de9ca6cd2) | Agent 身份（ERC-7857 启发的 INFT） |
+| **FXRiskOracleV2** | [`0x2abde2687923ffb9a5be4c6df3aac68a4f0a93ca`](https://chainscan-galileo.0g.ai/address/0x2abde2687923ffb9a5be4c6df3aac68a4f0a93ca) | 主力合约（带 Agent ID + AI 后端标识） |
+| **FXRiskAgentINFT** | [`0xAA540f42f0d20588f183E3B92B3b617991fa22D1`](https://chainscan-galileo.0g.ai/address/0xAA540f42f0d20588f183E3B92B3b617991fa22D1) | Agent 身份（ERC-7857 启发的 INFT） |
 | **FXRiskOracle V1** | [`0x12030bc39dd18E2e8e4F10e685b7B7E639F0925A`](https://chainscan-galileo.0g.ai/address/0x12030bc39dd18E2e8e4F10e685b7B7E639F0925A) | 历史审计数据（保留不变） |
 
 ## 问题背景
@@ -77,9 +77,9 @@ flowchart TD
 | 0G 组件 | 状态 | 我们如何使用 | 链上证据 |
 |---|---|---|---|
 | **0G Storage** | Live | 永久存档完整 AI 决策日志（含推理过程的 JSON）—— 不可篡改的审计链路 | 每条 alert 的 `storageRootHash` 字段 |
-| **0G Chain** | Live | `FXRiskOracleV2` 合约记录告警，字段带 `agentTokenId` + `aiBackend`；V1 保留作为历史审计 | [合约 `0x2ddfe5...`](https://chainscan-galileo.0g.ai/address/0x565d563e18e0a6b3106e862709db6b6143b27999) |
+| **0G Chain** | Live | `FXRiskOracleV2` 合约记录告警，字段带 `agentTokenId` + `aiBackend`；V1 保留作为历史审计 | [合约 `0x2ddfe5...`](https://chainscan-galileo.0g.ai/address/0x2abde2687923ffb9a5be4c6df3aac68a4f0a93ca) |
 | **0G Compute** | Live | 双后端 AI：豆包（默认）+ **0G Compute Network**（Qwen 2.5 7B，provider `0xa48f012...`）。通过 `AI_BACKEND=0g-compute` 切换 | aiBackend 字段为 `0g-compute` 的告警 —— 全程链上结算（`ledger` + `inference` 模块） |
-| **Agent ID (ERC-7857 INFT)** | Live | `FXRiskAgentINFT` 将 Agent 身份代币化。每次会话调用 `updateAgentState()` 使链上 `inferenceCount` 自增 | [INFT 合约 `tokenId #0`](https://chainscan-galileo.0g.ai/address/0xcf9b3d3ea674853dfc9031fbb6ac2e3de9ca6cd2) |
+| **Agent ID (ERC-7857 INFT)** | Live | `FXRiskAgentINFT` 将 Agent 身份代币化。每次会话调用 `updateAgentState()` 使链上 `inferenceCount` 自增 | [INFT 合约 `tokenId #0`](https://chainscan-galileo.0g.ai/address/0xAA540f42f0d20588f183E3B92B3b617991fa22D1) |
 
 **主动选择不集成**（见 [ADR-004](./docs/adr/004-skip-tee-privacy.md)）：Privacy / Secure Execution。我们的场景是审计/透明，不是保密。
 
@@ -185,7 +185,7 @@ npx ts-node src/tools/fetchLog.ts 0x526564ff261184de3fd17c90500c66aef0cee9f14e6f
 Agent 拥有**一等公民的链上身份**。这不只是元数据 —— 是被代币化的 AI 资产：
 
 ```
-FXRiskAgentINFT 合约: 0xcf9b3d3ea674853dfc9031fbb6ac2e3de9ca6cd2
+FXRiskAgentINFT 合约: 0xAA540f42f0d20588f183E3B92B3b617991fa22D1
 Agent Token ID: #0
 名称: "FX Risk Agent"
 版本: v0.2.0

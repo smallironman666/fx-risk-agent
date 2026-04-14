@@ -3,26 +3,26 @@ pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
 import "../contracts/FXRiskAgentINFT.sol";
+import "openzeppelin-contracts/contracts/access/Ownable.sol";
 
 contract FXRiskAgentINFTTest is Test {
     FXRiskAgentINFT internal agentInft;
 
+    // owner = test contract (地址由 Foundry 决定)
     address internal creator = address(0xA1);
     address internal stranger = address(0xB2);
 
     bytes32 internal constant META_HASH = bytes32(uint256(0x1234));
 
     function setUp() public {
+        // test contract 部署 → 自动成为 INFT 合约 owner
         agentInft = new FXRiskAgentINFT();
     }
 
-    // ============ Mint ============
+    // ============ Mint (onlyOwner) ============
 
     function test_mintAgent_incrementsTokenId() public {
-        vm.prank(creator);
         uint256 tokenId1 = agentInft.mintAgent(creator, "Agent A", "v1", "fx", META_HASH);
-
-        vm.prank(creator);
         uint256 tokenId2 = agentInft.mintAgent(creator, "Agent B", "v2", "fx", META_HASH);
 
         assertEq(tokenId1, 0, "first tokenId should be 0");
@@ -31,7 +31,6 @@ contract FXRiskAgentINFTTest is Test {
     }
 
     function test_mintAgent_storesMetadataCorrectly() public {
-        vm.prank(creator);
         uint256 tokenId = agentInft.mintAgent(creator, "FX Risk Agent", "v0.2.0", "fx-risk-inference", META_HASH);
 
         (FXRiskAgentINFT.AgentMetadata memory meta, uint256 inferenceCount, uint256 lastUpdate) =
@@ -41,7 +40,7 @@ contract FXRiskAgentINFTTest is Test {
         assertEq(meta.version, "v0.2.0");
         assertEq(meta.modelType, "fx-risk-inference");
         assertEq(meta.storageRootHash, META_HASH);
-        assertEq(meta.creator, creator);
+        assertEq(meta.creator, creator, "creator should equal `to` param");
         assertEq(inferenceCount, 0, "inferenceCount should start at 0");
         assertEq(lastUpdate, 0, "lastUpdate should start at 0");
     }
@@ -50,21 +49,26 @@ contract FXRiskAgentINFTTest is Test {
         vm.expectEmit(true, true, false, true);
         emit FXRiskAgentINFT.AgentMinted(0, creator, "Agent A", "v1", META_HASH, block.timestamp);
 
-        vm.prank(creator);
         agentInft.mintAgent(creator, "Agent A", "v1", "fx", META_HASH);
     }
 
     function test_mintAgent_assignsOwnership() public {
-        vm.prank(creator);
         uint256 tokenId = agentInft.mintAgent(creator, "Agent", "v1", "fx", META_HASH);
-
         assertEq(agentInft.ownerOf(tokenId), creator);
+    }
+
+    function test_mintAgent_revertsWhenNotOwner() public {
+        // stranger 非合约 owner，不应能 mint
+        vm.prank(stranger);
+        vm.expectRevert(
+            abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, stranger)
+        );
+        agentInft.mintAgent(stranger, "Agent", "v1", "fx", META_HASH);
     }
 
     // ============ Update State ============
 
     function test_updateAgentState_incrementsInferenceCount() public {
-        vm.prank(creator);
         uint256 tokenId = agentInft.mintAgent(creator, "Agent", "v1", "fx", META_HASH);
 
         bytes32 newHash = bytes32(uint256(0x5678));
@@ -81,7 +85,6 @@ contract FXRiskAgentINFTTest is Test {
     }
 
     function test_updateAgentState_updatesRootHash() public {
-        vm.prank(creator);
         uint256 tokenId = agentInft.mintAgent(creator, "Agent", "v1", "fx", META_HASH);
 
         bytes32 newHash = bytes32(uint256(0xABCDEF));
@@ -94,7 +97,6 @@ contract FXRiskAgentINFTTest is Test {
     }
 
     function test_updateAgentState_revertsIfNotOwner() public {
-        vm.prank(creator);
         uint256 tokenId = agentInft.mintAgent(creator, "Agent", "v1", "fx", META_HASH);
 
         bytes32 newHash = bytes32(uint256(0x999));
@@ -105,7 +107,6 @@ contract FXRiskAgentINFTTest is Test {
     }
 
     function test_updateAgentState_emitsEventWithCount() public {
-        vm.prank(creator);
         uint256 tokenId = agentInft.mintAgent(creator, "Agent", "v1", "fx", META_HASH);
 
         bytes32 newHash = bytes32(uint256(0x111));
@@ -122,5 +123,28 @@ contract FXRiskAgentINFTTest is Test {
     function test_getAgent_revertsForNonExistentToken() public {
         vm.expectRevert("Agent does not exist");
         agentInft.getAgent(999);
+    }
+
+    // ============ Ownership (Ownable) ============
+
+    function test_owner_defaultsToDeployer() public view {
+        // setUp 里 test contract 部署 INFT，所以 test contract 是 owner
+        assertEq(agentInft.owner(), address(this));
+    }
+
+    function test_transferOwnership_updatesOwner() public {
+        address newOwner = address(0xC3);
+        agentInft.transferOwnership(newOwner);
+        assertEq(agentInft.owner(), newOwner);
+
+        // 新 owner 能 mint
+        vm.prank(newOwner);
+        agentInft.mintAgent(creator, "Agent", "v1", "fx", META_HASH);
+
+        // 老 owner (test contract) 不能 mint 了
+        vm.expectRevert(
+            abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, address(this))
+        );
+        agentInft.mintAgent(creator, "Agent2", "v1", "fx", META_HASH);
     }
 }

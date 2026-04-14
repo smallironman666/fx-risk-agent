@@ -2,15 +2,19 @@
 pragma solidity ^0.8.24;
 
 import "openzeppelin-contracts/contracts/token/ERC721/ERC721.sol";
+import "openzeppelin-contracts/contracts/access/Ownable.sol";
+import "openzeppelin-contracts/contracts/utils/ReentrancyGuard.sol";
 
 /**
  * @title FXRiskAgentINFT
  * @notice ERC-7857 启发的 AI Agent 身份 NFT (Intelligent NFT)
  * @dev 基于 ERC-721 扩展，每个 NFT 代表一个 FX Risk Agent 的链上身份。
  *      元数据通过 0G Storage 的 rootHash 引用，每次推理后可更新状态。
+ *      访问控制：仅合约 owner 可 mint，防止伪造"官方" Agent 身份。
+ *      重入保护：mint/updateAgentState 加 nonReentrant，防御恶意 ERC721Receiver。
  * @author 0xSmallironman
  */
-contract FXRiskAgentINFT is ERC721 {
+contract FXRiskAgentINFT is ERC721, Ownable, ReentrancyGuard {
     uint256 private _nextTokenId;
 
     /// @notice Agent 元数据结构
@@ -20,7 +24,7 @@ contract FXRiskAgentINFT is ERC721 {
         string modelType;           // 模型类型："inference" / "oracle"
         bytes32 storageRootHash;    // 0G Storage 根哈希，指向完整元数据 JSON
         uint256 createdAt;          // 创建区块时间戳
-        address creator;            // 创建者钱包地址
+        address creator;            // Agent 所有人（NFT 接收方）
     }
 
     /// @dev tokenId → 元数据
@@ -50,11 +54,14 @@ contract FXRiskAgentINFT is ERC721 {
         uint256 timestamp
     );
 
-    constructor() ERC721("FX Risk Agent INFT", "FXAGENT") {}
+    constructor()
+        ERC721("FX Risk Agent INFT", "FXAGENT")
+        Ownable(msg.sender)
+    {}
 
     /**
-     * @notice 铸造一个新的 Agent INFT
-     * @param to           接收者地址
+     * @notice 铸造一个新的 Agent INFT（仅合约 owner 可调）
+     * @param to           接收者地址（同时是记录中的 creator）
      * @param agentName    Agent 名称
      * @param version      版本号
      * @param modelType    模型类型
@@ -67,20 +74,22 @@ contract FXRiskAgentINFT is ERC721 {
         string calldata version,
         string calldata modelType,
         bytes32 storageRootHash
-    ) external returns (uint256) {
+    ) external onlyOwner nonReentrant returns (uint256) {
         uint256 tokenId = _nextTokenId++;
-        _safeMint(to, tokenId);
 
+        // 先写 metadata 再外调，防御重入顺序
         agentMetadata[tokenId] = AgentMetadata({
             agentName: agentName,
             version: version,
             modelType: modelType,
             storageRootHash: storageRootHash,
             createdAt: block.timestamp,
-            creator: msg.sender
+            creator: to
         });
 
-        emit AgentMinted(tokenId, msg.sender, agentName, version, storageRootHash, block.timestamp);
+        _safeMint(to, tokenId);
+
+        emit AgentMinted(tokenId, to, agentName, version, storageRootHash, block.timestamp);
         return tokenId;
     }
 
@@ -89,7 +98,10 @@ contract FXRiskAgentINFT is ERC721 {
      * @param tokenId              Agent ID
      * @param newStorageRootHash   新的 0G Storage 根哈希
      */
-    function updateAgentState(uint256 tokenId, bytes32 newStorageRootHash) external {
+    function updateAgentState(uint256 tokenId, bytes32 newStorageRootHash)
+        external
+        nonReentrant
+    {
         require(_ownerOf(tokenId) == msg.sender, "Not agent owner");
         agentMetadata[tokenId].storageRootHash = newStorageRootHash;
         inferenceCount[tokenId]++;

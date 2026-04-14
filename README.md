@@ -27,8 +27,8 @@
 
 | Contract | Address | Role |
 |---|---|---|
-| **FXRiskOracleV2** | [`0x565d563e18e0a6b3106e862709db6b6143b27999`](https://chainscan-galileo.0g.ai/address/0x565d563e18e0a6b3106e862709db6b6143b27999) | Primary oracle with Agent ID linkage |
-| **FXRiskAgentINFT** | [`0xcf9b3d3ea674853dfc9031fbb6ac2e3de9ca6cd2`](https://chainscan-galileo.0g.ai/address/0xcf9b3d3ea674853dfc9031fbb6ac2e3de9ca6cd2) | Agent identity (ERC-7857 inspired INFT) |
+| **FXRiskOracleV2** | [`0x2abde2687923ffb9a5be4c6df3aac68a4f0a93ca`](https://chainscan-galileo.0g.ai/address/0x2abde2687923ffb9a5be4c6df3aac68a4f0a93ca) | Primary oracle with Agent ID linkage |
+| **FXRiskAgentINFT** | [`0xAA540f42f0d20588f183E3B92B3b617991fa22D1`](https://chainscan-galileo.0g.ai/address/0xAA540f42f0d20588f183E3B92B3b617991fa22D1) | Agent identity (ERC-7857 inspired INFT) |
 | **FXRiskOracle V1** | [`0x12030bc39dd18E2e8e4F10e685b7B7E639F0925A`](https://chainscan-galileo.0g.ai/address/0x12030bc39dd18E2e8e4F10e685b7B7E639F0925A) | Legacy (historical audit trail) |
 
 ## Problem
@@ -77,9 +77,9 @@ flowchart TD
 | 0G Component | Status | What We Use It For | On-chain Proof |
 |---|---|---|---|
 | **0G Storage** | Live | Permanent archive of full AI decision logs (JSON with reasoning) — tamper-proof audit trail | Every alert's `storageRootHash` field |
-| **0G Chain** | Live | `FXRiskOracleV2` records alerts with `agentTokenId` + `aiBackend` fields; V1 preserved for audit continuity | [Contract `0x2ddfe5...`](https://chainscan-galileo.0g.ai/address/0x565d563e18e0a6b3106e862709db6b6143b27999) |
+| **0G Chain** | Live | `FXRiskOracleV2` records alerts with `agentTokenId` + `aiBackend` fields; V1 preserved for audit continuity | [Contract `0x2ddfe5...`](https://chainscan-galileo.0g.ai/address/0x2abde2687923ffb9a5be4c6df3aac68a4f0a93ca) |
 | **0G Compute** | Live | Dual-backend AI: Doubao (default) and **0G Compute Network** (Qwen 2.5 7B via provider `0xa48f012...`). Switchable via `AI_BACKEND=0g-compute` | Alerts where `aiBackend="0g-compute"` — fully on-chain settled via `ledger` + `inference` modules |
-| **Agent ID (ERC-7857 INFT)** | Live | `FXRiskAgentINFT` tokenizes agent identity. Every session calls `updateAgentState()` incrementing on-chain `inferenceCount`. | [`tokenId #0` on INFT contract](https://chainscan-galileo.0g.ai/address/0xcf9b3d3ea674853dfc9031fbb6ac2e3de9ca6cd2) |
+| **Agent ID (ERC-7857 INFT)** | Live | `FXRiskAgentINFT` tokenizes agent identity. Every session calls `updateAgentState()` incrementing on-chain `inferenceCount`. | [`tokenId #0` on INFT contract](https://chainscan-galileo.0g.ai/address/0xAA540f42f0d20588f183E3B92B3b617991fa22D1) |
 
 **Not integrated** (by design, see [ADR-004](./docs/adr/004-skip-tee-privacy.md)): Privacy / Secure Execution. Our use case is audit/transparency, not confidentiality.
 
@@ -185,7 +185,7 @@ npx ts-node src/tools/fetchLog.ts 0x526564ff261184de3fd17c90500c66aef0cee9f14e6f
 The agent has a **first-class on-chain identity**. This isn't just metadata — it's a tokenized AI asset:
 
 ```
-FXRiskAgentINFT contract: 0xcf9b3d3ea674853dfc9031fbb6ac2e3de9ca6cd2
+FXRiskAgentINFT contract: 0xAA540f42f0d20588f183E3B92B3b617991fa22D1
 Agent Token ID: #0
 Name: "FX Risk Agent"
 Version: v0.2.0

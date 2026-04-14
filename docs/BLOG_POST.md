@@ -214,8 +214,8 @@ The gap between "AI makes decisions" and "AI decisions are auditable" is vast. P
 📊 **Live Dashboard**: [fx.0xsmall.com](http://fx.0xsmall.com)
 
 **On-chain verification**:
-- FXRiskOracleV2: [`0x565d563e18e0a6b3106e862709db6b6143b27999`](https://chainscan-galileo.0g.ai/address/0x565d563e18e0a6b3106e862709db6b6143b27999)
-- Agent INFT: [`0xcf9b3d3ea674853dfc9031fbb6ac2e3de9ca6cd2`](https://chainscan-galileo.0g.ai/address/0xcf9b3d3ea674853dfc9031fbb6ac2e3de9ca6cd2)
+- FXRiskOracleV2: [`0x2abde2687923ffb9a5be4c6df3aac68a4f0a93ca`](https://chainscan-galileo.0g.ai/address/0x2abde2687923ffb9a5be4c6df3aac68a4f0a93ca)
+- Agent INFT: [`0xAA540f42f0d20588f183E3B92B3b617991fa22D1`](https://chainscan-galileo.0g.ai/address/0xAA540f42f0d20588f183E3B92B3b617991fa22D1)
 
 ---
 
