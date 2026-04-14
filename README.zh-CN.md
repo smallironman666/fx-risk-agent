@@ -10,7 +10,7 @@
   <a href="https://youtu.be/j2eaoJN18a8">
     <img src="https://img.shields.io/badge/▶_观看_Demo-YouTube-red?style=for-the-badge&logo=youtube" alt="Demo Video" />
   </a>
-  <a href="http://fx.0xsmall.com">
+  <a href="https://smallironman666.github.io/fx-risk-agent/">
     <img src="https://img.shields.io/badge/📊_在线-Dashboard-blue?style=for-the-badge" alt="Live Dashboard" />
   </a>
   <a href="https://chainscan-galileo.0g.ai/address/0x12030bc39dd18E2e8e4F10e685b7B7E639F0925A">
@@ -21,7 +21,7 @@
 ## 在线 Demo
 
 - **Demo 视频**: [在 YouTube 观看 (2:37)](https://youtu.be/j2eaoJN18a8)
-- **Dashboard**: [http://fx.0xsmall.com](http://fx.0xsmall.com)
+- **Dashboard**: [https://smallironman666.github.io/fx-risk-agent/](https://smallironman666.github.io/fx-risk-agent/)
 
 **链上合约（0G Galileo 测试网，Chain ID 16602）：**
 
