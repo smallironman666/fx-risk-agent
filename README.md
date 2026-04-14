@@ -10,7 +10,7 @@
   <a href="https://youtu.be/j2eaoJN18a8">
     <img src="https://img.shields.io/badge/▶_Watch_Demo-YouTube-red?style=for-the-badge&logo=youtube" alt="Demo Video" />
   </a>
-  <a href="https://smallironman666.github.io/fx-risk-agent/">
+  <a href="http://fx.0xsmall.com">
     <img src="https://img.shields.io/badge/📊_Live-Dashboard-blue?style=for-the-badge" alt="Live Dashboard" />
   </a>
   <a href="https://chainscan-galileo.0g.ai/address/0x12030bc39dd18E2e8e4F10e685b7B7E639F0925A">
@@ -21,13 +21,13 @@
 ## Live Demo
 
 - **Demo Video**: [Watch on YouTube (2:37)](https://youtu.be/j2eaoJN18a8)
-- **Dashboard**: [https://smallironman666.github.io/fx-risk-agent/](https://smallironman666.github.io/fx-risk-agent/)
+- **Dashboard**: [http://fx.0xsmall.com](http://fx.0xsmall.com)
 
 **On-Chain Contracts (0G Galileo Testnet, Chain ID 16602):**
 
 | Contract | Address | Role |
 |---|---|---|
-| **FXRiskOracleV2** | [`0x2ddfe5669e712d31d8013ebf3034ea72d668c6bf`](https://chainscan-galileo.0g.ai/address/0x2ddfe5669e712d31d8013ebf3034ea72d668c6bf) | Primary oracle with Agent ID linkage |
+| **FXRiskOracleV2** | [`0x565d563e18e0a6b3106e862709db6b6143b27999`](https://chainscan-galileo.0g.ai/address/0x565d563e18e0a6b3106e862709db6b6143b27999) | Primary oracle with Agent ID linkage |
 | **FXRiskAgentINFT** | [`0xcf9b3d3ea674853dfc9031fbb6ac2e3de9ca6cd2`](https://chainscan-galileo.0g.ai/address/0xcf9b3d3ea674853dfc9031fbb6ac2e3de9ca6cd2) | Agent identity (ERC-7857 inspired INFT) |
 | **FXRiskOracle V1** | [`0x12030bc39dd18E2e8e4F10e685b7B7E639F0925A`](https://chainscan-galileo.0g.ai/address/0x12030bc39dd18E2e8e4F10e685b7B7E639F0925A) | Legacy (historical audit trail) |
 
@@ -77,7 +77,7 @@ flowchart TD
 | 0G Component | Status | What We Use It For | On-chain Proof |
 |---|---|---|---|
 | **0G Storage** | Live | Permanent archive of full AI decision logs (JSON with reasoning) — tamper-proof audit trail | Every alert's `storageRootHash` field |
-| **0G Chain** | Live | `FXRiskOracleV2` records alerts with `agentTokenId` + `aiBackend` fields; V1 preserved for audit continuity | [Contract `0x2ddfe5...`](https://chainscan-galileo.0g.ai/address/0x2ddfe5669e712d31d8013ebf3034ea72d668c6bf) |
+| **0G Chain** | Live | `FXRiskOracleV2` records alerts with `agentTokenId` + `aiBackend` fields; V1 preserved for audit continuity | [Contract `0x2ddfe5...`](https://chainscan-galileo.0g.ai/address/0x565d563e18e0a6b3106e862709db6b6143b27999) |
 | **0G Compute** | Live | Dual-backend AI: Doubao (default) and **0G Compute Network** (Qwen 2.5 7B via provider `0xa48f012...`). Switchable via `AI_BACKEND=0g-compute` | Alerts where `aiBackend="0g-compute"` — fully on-chain settled via `ledger` + `inference` modules |
 | **Agent ID (ERC-7857 INFT)** | Live | `FXRiskAgentINFT` tokenizes agent identity. Every session calls `updateAgentState()` incrementing on-chain `inferenceCount`. | [`tokenId #0` on INFT contract](https://chainscan-galileo.0g.ai/address/0xcf9b3d3ea674853dfc9031fbb6ac2e3de9ca6cd2) |
 

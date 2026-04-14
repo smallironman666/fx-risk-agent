@@ -63,7 +63,14 @@ async function openURL(url: string): Promise<void> {
 }
 
 async function main() {
-  const walletAddress = process.env.WALLET_ADDRESS || "0x7995A44aAd1fC1b0B63A7Ea79AFC146aD2182237";
+  // 强制要求 WALLET_ADDRESS 环境变量，避免其他使用者领到项目作者钱包
+  const walletAddress = process.env.WALLET_ADDRESS;
+  if (!walletAddress) {
+    console.error("❌ 错误：未设置 WALLET_ADDRESS 环境变量");
+    console.error("   请在 .env 中配置：WALLET_ADDRESS=0xYourWalletAddress");
+    console.error("   或直接 export：export WALLET_ADDRESS=0xYourWalletAddress");
+    process.exit(1);
+  }
 
   console.log("=".repeat(60));
   console.log("  0G Galileo Testnet 水龙头助手");

@@ -1,16 +1,22 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+import "openzeppelin-contracts/contracts/token/ERC721/IERC721.sol";
+
 /**
  * @title FXRiskOracleV2
  * @notice V2 版本的 FX 风险预警注册表，支持 Agent ID 关联 + AI 后端标识
  * @dev 相比 V1 新增字段：agentTokenId、aiBackend
  *      与 V1 共存（V1 保留历史数据），V2 为主写入合约
+ *      访问控制：submitAlert 要求 msg.sender 是 agentTokenId 对应 INFT 的 owner
  * @author 0xSmallironman
  */
 contract FXRiskOracleV2 {
 
     enum RiskLevel { LOW, MEDIUM, HIGH, CRITICAL }
+
+    /// @notice getLatestAlerts 单次查询上限，防 DoS
+    uint256 public constant MAX_QUERY_COUNT = 100;
 
     struct RiskAlert {
         string    currencyPair;     // e.g. "USD/CNY"
@@ -70,6 +76,13 @@ contract FXRiskOracleV2 {
         uint256 agentTokenId,
         string calldata aiBackend
     ) external {
+        // 访问控制：只有 agentTokenId 对应 INFT 的 owner 才能提交预警
+        // 防止任意地址伪造 AI 决策，保护"可信 AI"卖点
+        require(
+            IERC721(agentContract).ownerOf(agentTokenId) == msg.sender,
+            "FXRiskOracleV2: caller not agent owner"
+        );
+
         uint256 alertId = alerts.length;
 
         alerts.push(RiskAlert({
@@ -104,6 +117,9 @@ contract FXRiskOracleV2 {
     }
 
     function getLatestAlerts(uint256 count) external view returns (RiskAlert[] memory) {
+        // 防 DoS：限制单次返回数量，避免 gas 耗尽
+        require(count <= MAX_QUERY_COUNT, "FXRiskOracleV2: count exceeds max");
+
         uint256 total = alerts.length;
         if (count > total) count = total;
 

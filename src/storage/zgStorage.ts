@@ -37,11 +37,26 @@ export class ZgStorageClient {
     }
 
     // upload()返回 {txHash, rootHash} 或批量模式的 {txHashes[], rootHashes[]}
-    const uploadResult = result as { txHash: string; rootHash: string };
-    console.log(`[0G Storage] Upload successful, tx: ${uploadResult.txHash}`);
-    console.log(`[0G Storage] Root hash: ${uploadResult.rootHash}`);
+    // 兼容两种 shape，避免 rootHash undefined 被静默写到合约
+    const raw = result as {
+      txHash?: string;
+      rootHash?: string;
+      txHashes?: string[];
+      rootHashes?: string[];
+    };
+    const rootHash = raw.rootHash ?? raw.rootHashes?.[0];
+    const txHash = raw.txHash ?? raw.txHashes?.[0];
 
-    return uploadResult.rootHash;
+    if (!rootHash || typeof rootHash !== "string") {
+      throw new Error(
+        `[0G Storage] upload returned unexpected shape, no rootHash: ${JSON.stringify(raw)}`
+      );
+    }
+
+    console.log(`[0G Storage] Upload successful, tx: ${txHash}`);
+    console.log(`[0G Storage] Root hash: ${rootHash}`);
+
+    return rootHash;
   }
 
   /**

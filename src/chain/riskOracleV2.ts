@@ -12,9 +12,9 @@ const ORACLE_V2_ABI = [
   "event AlertCreated(uint256 indexed alertId, string currencyPair, uint8 level, uint256 spotRate, bytes32 storageRootHash, uint256 timestamp, uint256 indexed agentTokenId, string aiBackend)",
 ];
 
-// 汇率转 6 位定点数
+// 汇率转 6 位定点数：用 toFixed 规避浮点乘法误差（0.1*1e6 这类场景不会漂）
 function rateToFixed(rate: number): bigint {
-  return BigInt(Math.round(rate * 1_000_000));
+  return BigInt(rate.toFixed(6).replace(".", ""));
 }
 
 /**

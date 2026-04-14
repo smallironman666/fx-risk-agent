@@ -10,7 +10,7 @@
   <a href="https://youtu.be/j2eaoJN18a8">
     <img src="https://img.shields.io/badge/▶_观看_Demo-YouTube-red?style=for-the-badge&logo=youtube" alt="Demo Video" />
   </a>
-  <a href="https://smallironman666.github.io/fx-risk-agent/">
+  <a href="http://fx.0xsmall.com">
     <img src="https://img.shields.io/badge/📊_在线-Dashboard-blue?style=for-the-badge" alt="Live Dashboard" />
   </a>
   <a href="https://chainscan-galileo.0g.ai/address/0x12030bc39dd18E2e8e4F10e685b7B7E639F0925A">
@@ -21,13 +21,13 @@
 ## 在线 Demo
 
 - **Demo 视频**: [在 YouTube 观看 (2:37)](https://youtu.be/j2eaoJN18a8)
-- **Dashboard**: [https://smallironman666.github.io/fx-risk-agent/](https://smallironman666.github.io/fx-risk-agent/)
+- **Dashboard**: [http://fx.0xsmall.com](http://fx.0xsmall.com)
 
 **链上合约（0G Galileo 测试网，Chain ID 16602）：**
 
 | 合约 | 地址 | 用途 |
 |---|---|---|
-| **FXRiskOracleV2** | [`0x2ddfe5669e712d31d8013ebf3034ea72d668c6bf`](https://chainscan-galileo.0g.ai/address/0x2ddfe5669e712d31d8013ebf3034ea72d668c6bf) | 主力合约（带 Agent ID + AI 后端标识） |
+| **FXRiskOracleV2** | [`0x565d563e18e0a6b3106e862709db6b6143b27999`](https://chainscan-galileo.0g.ai/address/0x565d563e18e0a6b3106e862709db6b6143b27999) | 主力合约（带 Agent ID + AI 后端标识） |
 | **FXRiskAgentINFT** | [`0xcf9b3d3ea674853dfc9031fbb6ac2e3de9ca6cd2`](https://chainscan-galileo.0g.ai/address/0xcf9b3d3ea674853dfc9031fbb6ac2e3de9ca6cd2) | Agent 身份（ERC-7857 启发的 INFT） |
 | **FXRiskOracle V1** | [`0x12030bc39dd18E2e8e4F10e685b7B7E639F0925A`](https://chainscan-galileo.0g.ai/address/0x12030bc39dd18E2e8e4F10e685b7B7E639F0925A) | 历史审计数据（保留不变） |
 
@@ -77,7 +77,7 @@ flowchart TD
 | 0G 组件 | 状态 | 我们如何使用 | 链上证据 |
 |---|---|---|---|
 | **0G Storage** | Live | 永久存档完整 AI 决策日志（含推理过程的 JSON）—— 不可篡改的审计链路 | 每条 alert 的 `storageRootHash` 字段 |
-| **0G Chain** | Live | `FXRiskOracleV2` 合约记录告警，字段带 `agentTokenId` + `aiBackend`；V1 保留作为历史审计 | [合约 `0x2ddfe5...`](https://chainscan-galileo.0g.ai/address/0x2ddfe5669e712d31d8013ebf3034ea72d668c6bf) |
+| **0G Chain** | Live | `FXRiskOracleV2` 合约记录告警，字段带 `agentTokenId` + `aiBackend`；V1 保留作为历史审计 | [合约 `0x2ddfe5...`](https://chainscan-galileo.0g.ai/address/0x565d563e18e0a6b3106e862709db6b6143b27999) |
 | **0G Compute** | Live | 双后端 AI：豆包（默认）+ **0G Compute Network**（Qwen 2.5 7B，provider `0xa48f012...`）。通过 `AI_BACKEND=0g-compute` 切换 | aiBackend 字段为 `0g-compute` 的告警 —— 全程链上结算（`ledger` + `inference` 模块） |
 | **Agent ID (ERC-7857 INFT)** | Live | `FXRiskAgentINFT` 将 Agent 身份代币化。每次会话调用 `updateAgentState()` 使链上 `inferenceCount` 自增 | [INFT 合约 `tokenId #0`](https://chainscan-galileo.0g.ai/address/0xcf9b3d3ea674853dfc9031fbb6ac2e3de9ca6cd2) |
 

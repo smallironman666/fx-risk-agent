@@ -3,29 +3,40 @@ pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
 import "../contracts/FXRiskOracleV2.sol";
+import "../contracts/FXRiskAgentINFT.sol";
 
 contract FXRiskOracleV2Test is Test {
     FXRiskOracleV2 internal oracle;
+    FXRiskAgentINFT internal inft;
 
-    address internal agentContract = address(0xAAAA);
     address internal reporter = address(0xBBBB);
+    address internal intruder = address(0xCCCC);
 
     bytes32 internal constant ROOT_HASH_1 = bytes32(uint256(0x1111));
     bytes32 internal constant ROOT_HASH_2 = bytes32(uint256(0x2222));
 
     function setUp() public {
-        oracle = new FXRiskOracleV2(agentContract);
+        // 部署真实 INFT 合约，给 reporter mint tokenId=0 和 tokenId=1
+        inft = new FXRiskAgentINFT();
+        inft.mintAgent(reporter, "TestAgent0", "0.1.0", "inference", bytes32(uint256(0xABCD)));
+        inft.mintAgent(reporter, "TestAgent1", "0.1.0", "inference", bytes32(uint256(0xABCE)));
+
+        oracle = new FXRiskOracleV2(address(inft));
     }
 
     // ============ Constructor ============
 
     function test_constructor_setsAgentContract() public view {
-        assertEq(oracle.agentContract(), agentContract);
+        assertEq(oracle.agentContract(), address(inft));
     }
 
     function test_constructor_revertsOnZeroAddress() public {
         vm.expectRevert("agentContract is zero");
         new FXRiskOracleV2(address(0));
+    }
+
+    function test_constants_maxQueryCount() public view {
+        assertEq(oracle.MAX_QUERY_COUNT(), 100);
     }
 
     // ============ Submit Alert ============
@@ -122,6 +133,37 @@ contract FXRiskOracleV2Test is Test {
         oracle.submitAlert("USD/CNY", FXRiskOracleV2.RiskLevel.HIGH, 7_250_000, 7_350_000, ROOT_HASH_1, 0, "doubao");
     }
 
+    // ============ C1: Access Control ============
+
+    function test_submitAlert_revertsWhenCallerNotAgentOwner() public {
+        // intruder 没有 tokenId=0 的所有权
+        vm.prank(intruder);
+        vm.expectRevert("FXRiskOracleV2: caller not agent owner");
+        oracle.submitAlert("USD/CNY", FXRiskOracleV2.RiskLevel.HIGH, 7_250_000, 7_350_000, ROOT_HASH_1, 0, "doubao");
+    }
+
+    function test_submitAlert_revertsWhenTokenDoesNotExist() public {
+        // tokenId=99 从未 mint
+        vm.prank(reporter);
+        vm.expectRevert(); // OpenZeppelin ERC721NonexistentToken
+        oracle.submitAlert("USD/CNY", FXRiskOracleV2.RiskLevel.HIGH, 7_250_000, 7_350_000, ROOT_HASH_1, 99, "doubao");
+    }
+
+    function test_submitAlert_allowsTransferredOwner() public {
+        // reporter 把 tokenId=0 转给 intruder
+        vm.prank(reporter);
+        inft.transferFrom(reporter, intruder, 0);
+
+        // 新 owner intruder 可以提交预警
+        vm.prank(intruder);
+        oracle.submitAlert("USD/CNY", FXRiskOracleV2.RiskLevel.HIGH, 7_250_000, 7_350_000, ROOT_HASH_1, 0, "doubao");
+
+        // 原 owner reporter 不能再提交
+        vm.prank(reporter);
+        vm.expectRevert("FXRiskOracleV2: caller not agent owner");
+        oracle.submitAlert("USD/CNY", FXRiskOracleV2.RiskLevel.HIGH, 7_250_000, 7_350_000, ROOT_HASH_1, 0, "doubao");
+    }
+
     // ============ Query ============
 
     function test_getAlertCount_returnsCorrectCount() public {
@@ -166,6 +208,19 @@ contract FXRiskOracleV2Test is Test {
         // 请求10条，只有1条可用，应返回1条
         FXRiskOracleV2.RiskAlert[] memory latest = oracle.getLatestAlerts(10);
         assertEq(latest.length, 1);
+    }
+
+    // ============ C2: DoS Protection ============
+
+    function test_getLatestAlerts_revertsWhenCountExceedsMax() public {
+        vm.expectRevert("FXRiskOracleV2: count exceeds max");
+        oracle.getLatestAlerts(101);
+    }
+
+    function test_getLatestAlerts_allowsExactlyMaxCount() public view {
+        // 当前无 alert，count=100 应合法（clamp 到 0）
+        FXRiskOracleV2.RiskAlert[] memory latest = oracle.getLatestAlerts(100);
+        assertEq(latest.length, 0);
     }
 
     // ============ Multiple Backends ============

@@ -68,7 +68,18 @@ async function runAgent() {
 
   // V2 优先，V1 兼容（老流程还能跑）
   const useV2 = Boolean(oracleV2Address && agentInftAddress && agentTokenIdRaw);
-  const agentTokenId = agentTokenIdRaw !== undefined ? Number(agentTokenIdRaw) : -1;
+
+  // 解析 agentTokenId：未设置时用 -1 占位（V1 模式不会使用），设置非法值立即报错避免 uint256 溢出
+  const agentTokenId = (() => {
+    if (agentTokenIdRaw === undefined) return -1;
+    const parsed = Number(agentTokenIdRaw);
+    if (!Number.isInteger(parsed) || parsed < 0) {
+      throw new Error(
+        `Invalid AGENT_TOKEN_ID: "${agentTokenIdRaw}" (must be a non-negative integer)`
+      );
+    }
+    return parsed;
+  })();
 
   const oracleV2Client = useV2
     ? new RiskOracleV2Client(oracleV2Address!, privateKey, rpcUrl)
