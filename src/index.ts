@@ -12,6 +12,8 @@ import { RiskOracleClient } from "./chain/riskOracle";
 import { RiskOracleV2Client } from "./chain/riskOracleV2";
 import { AgentRegistryClient } from "./chain/agentRegistry";
 import { randomUUID } from "crypto";
+import { writeFileSync, mkdirSync } from "fs";
+import { join } from "path";
 
 const AGENT_ID = "fx-risk-agent-v0.2";
 
@@ -194,6 +196,19 @@ async function runAgent() {
       decisionLog.storageRootHash = rootHash;
       decisionLogRootHashes.push(rootHash);
       console.log(`[0G] Stored: ${rootHash.slice(0, 18)}...`);
+
+      // Step 5b: 同步镜像到 frontend/data/，供 Dashboard Modal 展示
+      // 权威源仍在 0G Storage（rootHash 链上可验），此文件是展示副本
+      try {
+        const mirrorDir = join(process.cwd(), "frontend", "data");
+        mkdirSync(mirrorDir, { recursive: true });
+        writeFileSync(
+          join(mirrorDir, `${rootHash}.json`),
+          JSON.stringify(decisionLog, null, 2)
+        );
+      } catch (mirrorErr: any) {
+        console.warn(`[Mirror] Skipped local mirror: ${mirrorErr.message}`);
+      }
 
       // Step 6: 上链
       let txHash = "-";

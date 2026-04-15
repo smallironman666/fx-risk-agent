@@ -15,6 +15,9 @@ function rateToFixed(rate: number): bigint {
   return BigInt(rate.toFixed(6).replace(".", ""));
 }
 
+// Galileo testnet 最低 gas price
+const OG_MIN_GAS_PRICE = BigInt(process.env.OG_MIN_GAS_PRICE || "3000000000");
+
 /**
  * 链上FXRiskOracle合约交互
  */
@@ -48,7 +51,8 @@ export class RiskOracleClient {
       level,
       rateToFixed(spotRate),
       rateToFixed(threshold),
-      paddedHash
+      paddedHash,
+      { gasPrice: OG_MIN_GAS_PRICE }
     );
 
     const receipt = await tx.wait();

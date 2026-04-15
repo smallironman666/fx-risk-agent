@@ -510,6 +510,92 @@
       .left, .right { border: none; border-bottom: 1px solid var(--border); }
       .stats-row { grid-template-columns: repeat(2, 1fr); }
     }
+
+    /* ===== AI Decision Modal ===== */
+    .modal-backdrop {
+      display: none;
+      position: fixed; inset: 0; z-index: 1000;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+      align-items: center; justify-content: center;
+      padding: 24px;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      max-width: 720px; width: 100%;
+      max-height: 90vh; overflow-y: auto;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    }
+    .modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 20px; border-bottom: 1px solid var(--border);
+    }
+    .modal-title {
+      font-size: 15px; font-weight: 600; color: var(--text);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .modal-title .badge {
+      font-size: 10px; padding: 2px 8px; border-radius: 3px;
+      background: var(--blue); color: #fff; font-weight: 500;
+    }
+    .modal-close {
+      background: none; border: none; color: var(--muted);
+      font-size: 20px; cursor: pointer; padding: 4px 8px;
+      border-radius: 4px;
+    }
+    .modal-close:hover { color: var(--text); background: var(--surface); }
+    .modal-body { padding: 20px; }
+    .modal-section { margin-bottom: 18px; }
+    .modal-section-title {
+      font-size: 11px; color: var(--muted); text-transform: uppercase;
+      letter-spacing: 0.5px; margin-bottom: 6px; font-weight: 600;
+    }
+    .modal-text {
+      font-size: 13px; color: var(--text); line-height: 1.6;
+      background: var(--surface); padding: 10px 12px; border-radius: 4px;
+      white-space: pre-wrap;
+    }
+    .modal-grid {
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;
+    }
+    .modal-chip {
+      font-size: 11px; padding: 8px 10px; border-radius: 4px;
+      background: var(--surface); border: 1px solid var(--border);
+    }
+    .modal-chip .k { color: var(--muted); font-size: 10px; text-transform: uppercase; }
+    .modal-chip .v { color: var(--text); font-family: var(--tech); font-weight: 500; margin-top: 2px; }
+    .modal-verify {
+      padding: 10px 12px; border-radius: 4px; font-size: 12px;
+      background: rgba(34, 197, 94, 0.1); border: 1px solid var(--green);
+      color: var(--green); display: flex; align-items: center; gap: 8px;
+      margin-top: 12px;
+    }
+    .modal-verify.pending {
+      background: rgba(234, 179, 8, 0.1); border-color: var(--yellow);
+      color: var(--yellow);
+    }
+    .modal-verify.error {
+      background: rgba(239, 68, 68, 0.1); border-color: var(--red);
+      color: var(--red);
+    }
+    .modal-hash {
+      font-family: var(--tech); font-size: 11px; color: var(--cyan);
+      word-break: break-all;
+    }
+    .modal-footer {
+      padding: 12px 20px; border-top: 1px solid var(--border);
+      display: flex; gap: 8px; justify-content: flex-end;
+    }
+    .modal-btn {
+      font-size: 12px; padding: 6px 14px; border-radius: 4px;
+      text-decoration: none; display: inline-block;
+      background: var(--surface); color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .modal-btn.primary { background: var(--blue); color: #fff; border-color: var(--blue); }
   </style>
 </head>
 <body>
@@ -996,11 +1082,12 @@ function showAIDetail(alert) {
   var btnRow = el("div", "");
   btnRow.style.cssText = "margin-top:8px;display:flex;gap:8px";
 
-  var viewBtn = el("a", "");
-  viewBtn.style.cssText = "font-size:12px;padding:4px 12px;background:var(--blue);color:#fff;border-radius:4px;text-decoration:none;display:inline-block";
-  viewBtn.textContent = "Open StorageScan";
-  viewBtn.href = "https://storagescan-galileo.0g.ai/submission/" + alert.storageRootHash;
-  viewBtn.target = "_blank";
+  var viewBtn = el("button", "");
+  viewBtn.style.cssText = "font-size:12px;padding:4px 12px;background:var(--blue);color:#fff;border:none;border-radius:4px;cursor:pointer;display:inline-block;font-family:inherit";
+  viewBtn.textContent = "View AI Decision";
+  viewBtn.addEventListener("click", function() {
+    openDecisionModal(alert.storageRootHash);
+  });
   btnRow.appendChild(viewBtn);
 
   var chainBtn = el("a", "");
@@ -1294,7 +1381,163 @@ function renderAgentCard(info) {
 
 loadDashboard();
 setInterval(loadDashboard, 30000);
+
+// ===== Decision Modal (DOM-only, no innerHTML for user data) =====
+function modalChip(k, v) {
+  var c = el("div", "modal-chip");
+  var kn = el("div", "k"); kn.textContent = k;
+  var vn = el("div", "v"); vn.textContent = v == null ? "-" : String(v);
+  c.appendChild(kn); c.appendChild(vn);
+  return c;
+}
+function modalSection(title, contentNode) {
+  var s = el("div", "modal-section");
+  var t = el("div", "modal-section-title"); t.textContent = title;
+  s.appendChild(t); s.appendChild(contentNode);
+  return s;
+}
+function modalGrid(children) {
+  var g = el("div", "modal-grid");
+  children.forEach(function(c) { g.appendChild(c); });
+  return g;
+}
+function modalTextBox(text) {
+  var d = el("div", "modal-text"); d.textContent = text || "";
+  return d;
+}
+function modalVerifyBox(text, cls) {
+  var v = el("div", "modal-verify" + (cls ? " " + cls : ""));
+  v.textContent = text;
+  return v;
+}
+function modalHashBox(text) {
+  var h = el("div", "modal-hash"); h.textContent = text || "";
+  return h;
+}
+
+async function openDecisionModal(rootHash) {
+  var modal = document.getElementById("decision-modal");
+  var body = document.getElementById("modal-body");
+  body.replaceChildren();
+
+  var loading = el("div", ""); loading.textContent = "Loading decision log from local mirror...";
+  loading.style.cssText = "text-align:center;padding:40px;color:var(--muted);font-size:13px";
+  body.appendChild(loading);
+  modal.classList.add("open");
+
+  document.getElementById("modal-indexer-link").href =
+    "https://indexer-storage-testnet-turbo.0g.ai/file/info/" + rootHash;
+  document.getElementById("modal-raw-link").href = "./data/" + rootHash + ".json";
+
+  try {
+    var res = await fetch("./data/" + rootHash + ".json");
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    renderDecisionModal(await res.json(), rootHash);
+  } catch (err) {
+    body.replaceChildren();
+    body.appendChild(modalVerifyBox(
+      "Local mirror not found for this alert. Authoritative data still exists on 0G Storage — " +
+      "click \"Verify on Indexer\" to confirm, or download directly via indexer.download(rootHash) " +
+      "from @0gfoundation/0g-ts-sdk.", "error"
+    ));
+    var rhWrap = el("div", "modal-section");
+    rhWrap.style.marginTop = "16px";
+    var rhTitle = el("div", "modal-section-title"); rhTitle.textContent = "Root Hash";
+    rhWrap.appendChild(rhTitle);
+    rhWrap.appendChild(modalHashBox(rootHash));
+    body.appendChild(rhWrap);
+  }
+}
+
+function renderDecisionModal(d, rootHash) {
+  var a = d.assessment || {};
+  var levels = ["LOW", "MEDIUM", "HIGH", "CRITICAL"];
+  var levelText = typeof a.level === "number" ? levels[a.level] : (a.level || "-");
+  var confText = a.confidence != null ? (a.confidence * 100).toFixed(0) + "%" : "-";
+  var body = document.getElementById("modal-body");
+  body.replaceChildren();
+
+  body.appendChild(modalGrid([
+    modalChip("Currency Pair", a.currencyPair),
+    modalChip("Risk Level", levelText),
+    modalChip("Confidence", confText),
+    modalChip("Spot Rate", a.spotRate)
+  ]));
+
+  if (a.reasoning) body.appendChild(modalSection("AI Reasoning", modalTextBox(a.reasoning)));
+  if (a.recommendation) body.appendChild(modalSection("Recommendation", modalTextBox(a.recommendation)));
+
+  body.appendChild(modalSection("Model & Backend", modalGrid([
+    modalChip("Model Used", d.modelUsed),
+    modalChip("AI Backend", d.aiBackend),
+    modalChip("Prompt Tokens", d.promptTokens || 0),
+    modalChip("Completion Tokens", d.completionTokens || 0)
+  ])));
+
+  if (d.fallbackReason) {
+    body.appendChild(modalSection("Backend Fallback",
+      modalVerifyBox("⚠ Primary backend failed, switched to fallback. Reason: " + d.fallbackReason, "pending")));
+  }
+
+  if (d.inferenceVerification) {
+    var v = d.inferenceVerification;
+    body.appendChild(modalSection("TEE Verification (0G Compute)",
+      modalVerifyBox(v.verified ? "✓ TEE signature verified" : "✗ TEE verification failed",
+        v.verified ? "" : "error")));
+  }
+
+  if (d.agentTokenId != null) {
+    body.appendChild(modalSection("Agent Identity", modalGrid([
+      modalChip("Agent ID", d.agentId),
+      modalChip("INFT Token", "#" + d.agentTokenId)
+    ])));
+  }
+
+  body.appendChild(modalSection("0G Storage Root Hash", modalHashBox(rootHash)));
+  if (d.txHash && d.txHash !== "-") {
+    body.appendChild(modalSection("On-chain Transaction", modalHashBox(d.txHash)));
+  }
+
+  var footer = modalVerifyBox(
+    "✓ Authoritative copy stored on 0G Storage · mirror above is for display only · verify via indexer API"
+  );
+  footer.style.marginTop = "16px";
+  body.appendChild(footer);
+}
+
+function closeDecisionModal(event) {
+  if (event && event.target) {
+    var id = event.target.id;
+    var cls = event.target.className || "";
+    if (id !== "decision-modal" && String(cls).indexOf("modal-close") < 0) return;
+  }
+  document.getElementById("decision-modal").classList.remove("open");
+}
+
+document.addEventListener("keydown", function(e) {
+  if (e.key === "Escape") {
+    document.getElementById("decision-modal").classList.remove("open");
+  }
+});
 </script>
+
+<!-- ===== AI Decision Modal ===== -->
+<div id="decision-modal" class="modal-backdrop" onclick="closeDecisionModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title">
+        <span>AI Decision Audit Trail</span>
+        <span class="badge">Verifiable on 0G</span>
+      </div>
+      <button class="modal-close" onclick="closeDecisionModal(event)" aria-label="Close">&times;</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-footer">
+      <a id="modal-indexer-link" class="modal-btn" target="_blank" rel="noopener">Verify on Indexer</a>
+      <a id="modal-raw-link" class="modal-btn primary" target="_blank" rel="noopener">Raw JSON</a>
+    </div>
+  </div>
+</div>
 
 </body>
 </html>

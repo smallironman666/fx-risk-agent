@@ -5,6 +5,9 @@ import { ethers } from "ethers";
  * 封装 mint / updateAgentState / 查询 等操作
  */
 
+// Galileo testnet 最低 gas price，SDK/ethers 默认太低会 revert
+const OG_MIN_GAS_PRICE = BigInt(process.env.OG_MIN_GAS_PRICE || "3000000000");
+
 const AGENT_INFT_ABI = [
   "function mintAgent(address to, string calldata agentName, string calldata version, string calldata modelType, bytes32 storageRootHash) external returns (uint256)",
   "function updateAgentState(uint256 tokenId, bytes32 newStorageRootHash) external",
@@ -67,7 +70,8 @@ export class AgentRegistryClient {
       agentName,
       version,
       modelType,
-      paddedHash
+      paddedHash,
+      { gasPrice: OG_MIN_GAS_PRICE }
     );
     const receipt = await tx.wait();
 
@@ -99,7 +103,9 @@ export class AgentRegistryClient {
    */
   async updateAgentState(tokenId: number, newStorageRootHash: string): Promise<string> {
     const paddedHash = ethers.zeroPadValue(newStorageRootHash, 32);
-    const tx = await this.contract.updateAgentState(tokenId, paddedHash);
+    const tx = await this.contract.updateAgentState(tokenId, paddedHash, {
+      gasPrice: OG_MIN_GAS_PRICE,
+    });
     const receipt = await tx.wait();
     console.log(`[AgentRegistry] State updated for tokenId=${tokenId}, tx=${receipt.hash}`);
     return receipt.hash;

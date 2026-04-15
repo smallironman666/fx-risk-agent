@@ -10,6 +10,10 @@ import { DecisionLog } from "../agent/types";
 const OG_RPC_URL = process.env.OG_RPC_URL || "https://evmrpc-testnet.0g.ai";
 const OG_INDEXER_URL = process.env.OG_STORAGE_INDEXER || "https://indexer-storage-testnet-turbo.0g.ai";
 
+// Galileo testnet 要求最低 gas price，SDK 默认过低会 revert
+// 默认 3 gwei（与 forge deploy 一致），可用 OG_STORAGE_GAS_PRICE 环境变量覆盖
+const OG_STORAGE_GAS_PRICE = BigInt(process.env.OG_STORAGE_GAS_PRICE || "3000000000");
+
 export class ZgStorageClient {
   private indexer: Indexer;
   private signer: ethers.Wallet;
@@ -31,7 +35,15 @@ export class ZgStorageClient {
 
     const memData = new MemData(data);
 
-    const [result, uploadErr] = await this.indexer.upload(memData, OG_RPC_URL, this.signer);
+    // 第 6 参数 TransactionOptions.gasPrice 显式指定，避开 SDK 默认过低被 Galileo revert
+    const [result, uploadErr] = await this.indexer.upload(
+      memData,
+      OG_RPC_URL,
+      this.signer,
+      undefined,
+      undefined,
+      { gasPrice: OG_STORAGE_GAS_PRICE }
+    );
     if (uploadErr) {
       throw new Error(`Failed to upload to 0G Storage: ${uploadErr}`);
     }

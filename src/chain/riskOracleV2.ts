@@ -17,6 +17,9 @@ function rateToFixed(rate: number): bigint {
   return BigInt(rate.toFixed(6).replace(".", ""));
 }
 
+// Galileo testnet 最低 gas price，ethers 默认可能低于此被 revert
+const OG_MIN_GAS_PRICE = BigInt(process.env.OG_MIN_GAS_PRICE || "3000000000");
+
 /**
  * FXRiskOracleV2 合约客户端
  * 提交带 Agent ID + AI Backend 的风险预警
@@ -56,7 +59,8 @@ export class RiskOracleV2Client {
       rateToFixed(threshold),
       paddedHash,
       agentTokenId,
-      aiBackend
+      aiBackend,
+      { gasPrice: OG_MIN_GAS_PRICE }
     );
     const receipt = await tx.wait();
     console.log(`[ChainV2] Alert submitted, tx: ${receipt.hash}`);

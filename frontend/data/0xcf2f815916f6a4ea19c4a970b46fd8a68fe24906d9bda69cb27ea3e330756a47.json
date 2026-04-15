@@ -1,0 +1,200 @@
+{
+  "agentId": "fx-risk-agent-v0.2",
+  "sessionId": "57751f90-b9cb-4e8c-b17c-2957653debc5",
+  "assessment": {
+    "currencyPair": "USD/CNY",
+    "level": 1,
+    "spotRate": 7.246979,
+    "threshold": 0.5,
+    "reasoning": "The latest rate of 7.246979 is close to the upper bound of 7.35, and the volatility over the last 5 quotes has spiked, indicating potential for further movement.",
+    "recommendation": "Monitor the USD/CNY rate closely and prepare contingency plans for potential further increases.",
+    "confidence": 0.8,
+    "timestamp": 1776252508620,
+    "quotes": [
+      {
+        "currencyPair": "USD/CNY",
+        "bid": 7.260091,
+        "ask": 7.261541,
+        "mid": 7.260816,
+        "timestamp": 1776251298381,
+        "source": "FX_SIMULATOR"
+      },
+      {
+        "currencyPair": "USD/CNY",
+        "bid": 7.246129,
+        "ask": 7.247579,
+        "mid": 7.246854,
+        "timestamp": 1776251358381,
+        "source": "FX_SIMULATOR"
+      },
+      {
+        "currencyPair": "USD/CNY",
+        "bid": 7.250263,
+        "ask": 7.251713,
+        "mid": 7.250988,
+        "timestamp": 1776251418381,
+        "source": "FX_SIMULATOR"
+      },
+      {
+        "currencyPair": "USD/CNY",
+        "bid": 7.258801,
+        "ask": 7.260251,
+        "mid": 7.259526,
+        "timestamp": 1776251478381,
+        "source": "FX_SIMULATOR"
+      },
+      {
+        "currencyPair": "USD/CNY",
+        "bid": 7.241926,
+        "ask": 7.243376,
+        "mid": 7.242651,
+        "timestamp": 1776251538381,
+        "source": "FX_SIMULATOR"
+      },
+      {
+        "currencyPair": "USD/CNY",
+        "bid": 7.241648,
+        "ask": 7.243098,
+        "mid": 7.242373,
+        "timestamp": 1776251598381,
+        "source": "FX_SIMULATOR"
+      },
+      {
+        "currencyPair": "USD/CNY",
+        "bid": 7.258392,
+        "ask": 7.259842,
+        "mid": 7.259117,
+        "timestamp": 1776251658381,
+        "source": "FX_SIMULATOR"
+      },
+      {
+        "currencyPair": "USD/CNY",
+        "bid": 7.243208,
+        "ask": 7.244658,
+        "mid": 7.243933,
+        "timestamp": 1776251718381,
+        "source": "FX_SIMULATOR"
+      },
+      {
+        "currencyPair": "USD/CNY",
+        "bid": 7.255161,
+        "ask": 7.256611,
+        "mid": 7.255886,
+        "timestamp": 1776251778381,
+        "source": "FX_SIMULATOR"
+      },
+      {
+        "currencyPair": "USD/CNY",
+        "bid": 7.254749,
+        "ask": 7.256199,
+        "mid": 7.255474,
+        "timestamp": 1776251838381,
+        "source": "FX_SIMULATOR"
+      },
+      {
+        "currencyPair": "USD/CNY",
+        "bid": 7.238955,
+        "ask": 7.240405,
+        "mid": 7.23968,
+        "timestamp": 1776251898381,
+        "source": "FX_SIMULATOR"
+      },
+      {
+        "currencyPair": "USD/CNY",
+        "bid": 7.235048,
+        "ask": 7.236498,
+        "mid": 7.235773,
+        "timestamp": 1776251958381,
+        "source": "FX_SIMULATOR"
+      },
+      {
+        "currencyPair": "USD/CNY",
+        "bid": 7.239164,
+        "ask": 7.240614,
+        "mid": 7.239889,
+        "timestamp": 1776252018381,
+        "source": "FX_SIMULATOR"
+      },
+      {
+        "currencyPair": "USD/CNY",
+        "bid": 7.239129,
+        "ask": 7.240579,
+        "mid": 7.239854,
+        "timestamp": 1776252078381,
+        "source": "FX_SIMULATOR"
+      },
+      {
+        "currencyPair": "USD/CNY",
+        "bid": 7.261365,
+        "ask": 7.262815,
+        "mid": 7.26209,
+        "timestamp": 1776252138381,
+        "source": "FX_SIMULATOR"
+      },
+      {
+        "currencyPair": "USD/CNY",
+        "bid": 7.236546,
+        "ask": 7.237996,
+        "mid": 7.237271,
+        "timestamp": 1776252198381,
+        "source": "FX_SIMULATOR"
+      },
+      {
+        "currencyPair": "USD/CNY",
+        "bid": 7.242849,
+        "ask": 7.244299,
+        "mid": 7.243574,
+        "timestamp": 1776252258381,
+        "source": "FX_SIMULATOR"
+      },
+      {
+        "currencyPair": "USD/CNY",
+        "bid": 7.250818,
+        "ask": 7.252268,
+        "mid": 7.251543,
+        "timestamp": 1776252318381,
+        "source": "FX_SIMULATOR"
+      },
+      {
+        "currencyPair": "USD/CNY",
+        "bid": 7.253439,
+        "ask": 7.254889,
+        "mid": 7.254164,
+        "timestamp": 1776252378381,
+        "source": "FX_SIMULATOR"
+      },
+      {
+        "currencyPair": "USD/CNY",
+        "bid": 7.246254,
+        "ask": 7.247704,
+        "mid": 7.246979,
+        "timestamp": 1776252438381,
+        "source": "FX_SIMULATOR"
+      }
+    ],
+    "backendLabel": "0g-compute/qwen/qwen-2.5-7b-instruct (TEE) → fallback(doubao/doubao-seed-2-0-pro-260215)",
+    "usage": {
+      "promptTokens": 716,
+      "completionTokens": 101
+    },
+    "verification": {
+      "providerAddress": "0xa48f01287233509FD694a22Bf840225062E67836",
+      "chatId": "chatcmpl-b33cb9f456de48e3830efcfe51a8026a",
+      "verified": true
+    },
+    "actualBackend": "0g-compute"
+  },
+  "modelUsed": "0g-compute/pending-init (TEE) → fallback(doubao/doubao-seed-2-0-pro-260215)",
+  "promptTokens": 716,
+  "completionTokens": 101,
+  "createdAt": "2026-04-15T11:28:28.620Z",
+  "aiBackend": "0g-compute",
+  "inferenceVerification": {
+    "providerAddress": "0xa48f01287233509FD694a22Bf840225062E67836",
+    "chatId": "chatcmpl-b33cb9f456de48e3830efcfe51a8026a",
+    "verified": true
+  },
+  "agentTokenId": 0,
+  "agentContract": "0xAA540f42f0d20588f183E3B92B3b617991fa22D1",
+  "storageRootHash": "0xcf2f815916f6a4ea19c4a970b46fd8a68fe24906d9bda69cb27ea3e330756a47"
+}
