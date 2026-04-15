@@ -987,7 +987,7 @@ function showAIDetail(alert) {
   var hashLink = el("a", "ai-value mono");
   hashLink.style.cssText = "font-size:11px;word-break:break-all;color:var(--cyan);display:block;text-decoration:none;cursor:pointer";
   hashLink.textContent = alert.storageRootHash;
-  hashLink.href = "https://storagescan-galileo.0g.ai/" + alert.storageRootHash;
+  hashLink.href = "https://storagescan-galileo.0g.ai/submission/" + alert.storageRootHash;
   hashLink.target = "_blank";
   hashLink.addEventListener("mouseenter", function() { this.style.textDecoration = "underline"; });
   hashLink.addEventListener("mouseleave", function() { this.style.textDecoration = "none"; });
@@ -999,7 +999,7 @@ function showAIDetail(alert) {
   var viewBtn = el("a", "");
   viewBtn.style.cssText = "font-size:12px;padding:4px 12px;background:var(--blue);color:#fff;border-radius:4px;text-decoration:none;display:inline-block";
   viewBtn.textContent = "Open StorageScan";
-  viewBtn.href = "https://storagescan-galileo.0g.ai/" + alert.storageRootHash;
+  viewBtn.href = "https://storagescan-galileo.0g.ai/submission/" + alert.storageRootHash;
   viewBtn.target = "_blank";
   btnRow.appendChild(viewBtn);
 
