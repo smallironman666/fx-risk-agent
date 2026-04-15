@@ -64,6 +64,8 @@ export async function analyzeRisk(
     backendLabel: backend.label,
     usage: response.usage,
     verification: response.verification,
+    actualBackend: response.actualBackend,
+    fallbackReason: response.fallbackReason,
   } as RiskAssessment;
 }
 

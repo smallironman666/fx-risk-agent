@@ -166,6 +166,11 @@ async function runAgent() {
       await checkAndAlert(assessment);
 
       // Step 4: 构建决策日志
+      // 优先用 actualBackend（反映实际产生响应的后端），未设置则退回 llmBackend.kind
+      const effectiveBackend = assessment.actualBackend ?? llmBackend.kind;
+      if (assessment.fallbackReason) {
+        console.warn(`[AI] Fallback to ${effectiveBackend}: ${assessment.fallbackReason}`);
+      }
       const decisionLog: DecisionLog = {
         agentId: AGENT_ID,
         sessionId,
@@ -174,8 +179,9 @@ async function runAgent() {
         promptTokens: assessment.usage?.promptTokens ?? 0,
         completionTokens: assessment.usage?.completionTokens ?? 0,
         createdAt: new Date().toISOString(),
-        aiBackend: llmBackend.kind,
+        aiBackend: effectiveBackend,
         inferenceVerification: assessment.verification,
+        ...(assessment.fallbackReason && { fallbackReason: assessment.fallbackReason }),
         ...(useV2 && {
           agentTokenId,
           agentContract: agentInftAddress,
@@ -200,7 +206,7 @@ async function runAgent() {
           assessment.threshold,
           rootHash,
           agentTokenId,
-          llmBackend.kind
+          effectiveBackend
         );
       } else if (oracleV1Client) {
         console.log("[0G] Recording alert on-chain (V1)...");

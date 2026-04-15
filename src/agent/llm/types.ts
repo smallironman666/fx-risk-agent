@@ -32,6 +32,10 @@ export interface ChatResponse {
   usage: ChatUsage;
   model: string;
   verification?: InferenceVerification;
+  /** 实际产生本次响应的后端（可能不同于 label.kind，当发生 fallback 时）*/
+  actualBackend?: BackendKind;
+  /** 如发生 fallback，记录切换原因（primary 的报错信息）*/
+  fallbackReason?: string;
 }
 
 /**

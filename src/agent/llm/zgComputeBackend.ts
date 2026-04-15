@@ -27,12 +27,14 @@ export class ZgComputeBackend implements LLMBackend {
   private providerAddress?: string;
   private serviceMeta?: { endpoint: string; model: string };
   private initPromise?: Promise<void>;
+  private readonly timeoutMs: number;
 
   constructor(opts: {
     privateKey?: string;
     rpcUrl?: string;
     preferredProvider?: string;
     enableTEE?: boolean;
+    timeoutMs?: number;
   } = {}) {
     const privateKey = opts.privateKey || process.env.PRIVATE_KEY;
     const rpcUrl = opts.rpcUrl || process.env.OG_RPC_URL || "https://evmrpc-testnet.0g.ai";
@@ -45,6 +47,7 @@ export class ZgComputeBackend implements LLMBackend {
     this.wallet = new ethers.Wallet(privateKey, provider);
     this.preferredProvider = opts.preferredProvider || process.env.ZG_COMPUTE_PROVIDER;
     this.enableTEE = opts.enableTEE ?? (process.env.ZG_COMPUTE_TEE !== "false");
+    this.timeoutMs = opts.timeoutMs ?? (Number(process.env.AI_TIMEOUT_MS) || 30_000);
   }
 
   public get label(): string {
@@ -131,6 +134,9 @@ export class ZgComputeBackend implements LLMBackend {
       .map((m) => m.content)
       .join("\n");
 
+    const abortController = new AbortController();
+    const timeoutHandle = setTimeout(() => abortController.abort(), this.timeoutMs);
+
     try {
       const headers = await broker.inference.getRequestHeaders(providerAddress, userContent);
 
@@ -146,6 +152,7 @@ export class ZgComputeBackend implements LLMBackend {
           max_tokens: request.maxTokens ?? 1024,
           temperature: request.temperature,
         }),
+        signal: abortController.signal,
       });
 
       if (!response.ok) {
@@ -204,14 +211,17 @@ export class ZgComputeBackend implements LLMBackend {
           completionTokens: data.usage?.completion_tokens ?? 0,
         },
         verification,
+        actualBackend: this.kind,
       };
     } catch (err: any) {
       if (err instanceof BackendUnavailableError) throw err;
-      throw new BackendUnavailableError(
-        this.kind,
-        `Chat failed: ${err.message || err}`,
-        err
-      );
+      const isTimeout = err?.name === "AbortError";
+      const message = isTimeout
+        ? `Request timeout after ${this.timeoutMs}ms`
+        : `Chat failed: ${err.message || err}`;
+      throw new BackendUnavailableError(this.kind, message, err);
+    } finally {
+      clearTimeout(timeoutHandle);
     }
   }
 

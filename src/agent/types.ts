@@ -42,6 +42,8 @@ export interface RiskAssessment {
   backendLabel?: string;    // e.g. "doubao/doubao-seed-2-0-pro"
   usage?: ChatUsage;
   verification?: InferenceVerification;
+  actualBackend?: BackendKind;   // 实际产生响应的后端（fallback 后可能与 primary 不同）
+  fallbackReason?: string;       // 如发生 fallback，原因（primary 的错误信息）
 }
 
 export interface DecisionLog {
