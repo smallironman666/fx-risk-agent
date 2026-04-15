@@ -106,8 +106,9 @@ export function generateHistoricalQuotes(
     if (scenario === "crisis") {
       const progress = i / count;
       quote.mid = Number((quote.mid + trendBias * progress).toFixed(6));
-      quote.bid = quote.mid - (BASE_RATES[pair] || 1) * 0.0001;
-      quote.ask = quote.mid + (BASE_RATES[pair] || 1) * 0.0001;
+      // bid/ask 同样按 6 位小数规整，保持与 generateQuote 一致
+      quote.bid = Number((quote.mid - (BASE_RATES[pair] || 1) * 0.0001).toFixed(6));
+      quote.ask = Number((quote.mid + (BASE_RATES[pair] || 1) * 0.0001).toFixed(6));
     }
 
     quotes.push(quote);

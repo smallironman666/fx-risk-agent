@@ -122,8 +122,11 @@ function parseAnalysisResponse(text: string): {
   let parsed: any;
   try {
     parsed = JSON.parse(jsonMatch[0]);
-  } catch {
-    // 回退：尝试从整个文本中提取最后一个完整JSON
+  } catch (err: any) {
+    // 回退：尝试从整个文本中提取最后一个完整 JSON
+    console.warn(
+      `[Analyzer] Primary JSON parse failed (${err.message}), attempting fallback regex extraction`
+    );
     const fallback = text.match(/\{[^{}]*\}/g);
     if (!fallback) throw new Error("Failed to parse AI response as JSON");
     parsed = JSON.parse(fallback[fallback.length - 1]);

@@ -1,7 +1,7 @@
 import * as dotenv from "dotenv";
 dotenv.config();
 
-import { exec } from "child_process";
+import { execFile } from "child_process";
 import { promisify } from "util";
 
 /**
@@ -14,7 +14,7 @@ import { promisify } from "util";
  *   3. 你只需要点 CAPTCHA 和 X/Discord 登录
  */
 
-const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
 
 const FAUCETS = [
   {
@@ -45,8 +45,14 @@ const FAUCETS = [
 
 async function copyToClipboard(text: string): Promise<void> {
   try {
-    // macOS: pbcopy
-    await execAsync(`echo -n "${text}" | pbcopy`);
+    // macOS: pbcopy 从 stdin 读取内容，用 execFile 避免 shell 拼接
+    const { spawn } = await import("child_process");
+    await new Promise<void>((resolve, reject) => {
+      const proc = spawn("pbcopy");
+      proc.on("error", reject);
+      proc.on("close", (code) => (code === 0 ? resolve() : reject(new Error(`pbcopy exited ${code}`))));
+      proc.stdin.end(text);
+    });
     console.log(`✓ 钱包地址已复制到剪贴板`);
   } catch (err: any) {
     console.warn(`⚠ 复制剪贴板失败：${err.message}`);
@@ -55,8 +61,8 @@ async function copyToClipboard(text: string): Promise<void> {
 
 async function openURL(url: string): Promise<void> {
   try {
-    // macOS: open
-    await execAsync(`open "${url}"`);
+    // macOS: open，用 execFile 把 url 作为参数传递，避免 shell 注入
+    await execFileAsync("open", [url]);
   } catch (err: any) {
     console.warn(`⚠ 打开 URL 失败：${err.message}`);
   }
