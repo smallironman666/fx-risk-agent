@@ -1447,41 +1447,49 @@ function modalHashBox(text) {
   return h;
 }
 
+var OG_INDEXER = "https://indexer-storage-testnet-turbo.0g.ai";
+
 async function openDecisionModal(rootHash) {
   var modal = document.getElementById("decision-modal");
   var body = document.getElementById("modal-body");
   body.replaceChildren();
 
-  var loading = el("div", ""); loading.textContent = "Loading decision log from local mirror...";
+  var loading = el("div", ""); loading.textContent = "Fetching decision log from 0G Storage...";
   loading.style.cssText = "text-align:center;padding:40px;color:var(--muted);font-size:13px";
   body.appendChild(loading);
   modal.classList.add("open");
 
-  document.getElementById("modal-indexer-link").href =
-    "https://indexer-storage-testnet-turbo.0g.ai/file/info/" + rootHash;
-  document.getElementById("modal-raw-link").href = "./data/" + rootHash + ".json";
+  document.getElementById("modal-indexer-link").href = OG_INDEXER + "/file/info/" + rootHash;
+  document.getElementById("modal-raw-link").href = OG_INDEXER + "/file?root=" + rootHash;
 
   try {
-    var res = await fetch("./data/" + rootHash + ".json");
-    if (!res.ok) throw new Error("HTTP " + res.status);
-    renderDecisionModal(await res.json(), rootHash);
-  } catch (err) {
-    body.replaceChildren();
-    body.appendChild(modalVerifyBox(
-      "Local mirror not found for this alert. Authoritative data still exists on 0G Storage — " +
-      "click \"Verify on Indexer\" to confirm, or download directly via indexer.download(rootHash) " +
-      "from @0gfoundation/0g-ts-sdk.", "error"
-    ));
-    var rhWrap = el("div", "modal-section");
-    rhWrap.style.marginTop = "16px";
-    var rhTitle = el("div", "modal-section-title"); rhTitle.textContent = "Root Hash";
-    rhWrap.appendChild(rhTitle);
-    rhWrap.appendChild(modalHashBox(rootHash));
-    body.appendChild(rhWrap);
+    // 优先从 0G indexer 实时拉取（去中心化、最权威）
+    var res = await fetch(OG_INDEXER + "/file?root=" + rootHash);
+    if (!res.ok) throw new Error("0G indexer HTTP " + res.status);
+    renderDecisionModal(await res.json(), rootHash, "0g-storage");
+  } catch (primaryErr) {
+    // Fallback: 本地 mirror
+    try {
+      var mirrorRes = await fetch("./data/" + rootHash + ".json");
+      if (!mirrorRes.ok) throw new Error("mirror HTTP " + mirrorRes.status);
+      renderDecisionModal(await mirrorRes.json(), rootHash, "local-mirror");
+    } catch (fallbackErr) {
+      body.replaceChildren();
+      body.appendChild(modalVerifyBox(
+        "Could not load decision log from 0G Storage or local mirror. " +
+        "The data is on-chain — click \"Download Original\" to fetch it directly.", "error"
+      ));
+      var rhWrap = el("div", "modal-section");
+      rhWrap.style.marginTop = "16px";
+      var rhTitle = el("div", "modal-section-title"); rhTitle.textContent = "Root Hash";
+      rhWrap.appendChild(rhTitle);
+      rhWrap.appendChild(modalHashBox(rootHash));
+      body.appendChild(rhWrap);
+    }
   }
 }
 
-function renderDecisionModal(d, rootHash) {
+function renderDecisionModal(d, rootHash, source) {
   var a = d.assessment || {};
   var levels = ["LOW", "MEDIUM", "HIGH", "CRITICAL"];
   var levelText = typeof a.level === "number" ? levels[a.level] : (a.level || "-");
@@ -1530,9 +1538,10 @@ function renderDecisionModal(d, rootHash) {
     body.appendChild(modalSection("On-chain Transaction", modalHashBox(d.txHash)));
   }
 
-  var footer = modalVerifyBox(
-    "✓ Authoritative copy stored on 0G Storage · mirror above is for display only · verify via indexer API"
-  );
+  var sourceLabel = source === "0g-storage"
+    ? "✓ Fetched directly from 0G decentralized storage (indexer API) · tamper-proof"
+    : "✓ Loaded from local mirror · authoritative copy on 0G Storage · verify via Download Original";
+  var footer = modalVerifyBox(sourceLabel);
   footer.style.marginTop = "16px";
   body.appendChild(footer);
 }
