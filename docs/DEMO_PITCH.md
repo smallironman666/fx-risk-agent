@@ -14,7 +14,7 @@ Hi, I'm Small. I built **FX Risk Agent** — an AI risk-monitoring agent for cro
 
 Today most AI systems are black boxes. When a bank's AI flags a transaction, no one can audit *what the AI actually knew and judged at that moment*. That gap is fatal for regulated finance.
 
-FX Risk Agent closes it. Every time my AI analyzes a currency pair, the full reasoning — model metadata, confidence, recommendation — gets written to **0G Storage**. The alert hits **0G Chain**. The agent itself is tokenized as an **ERC-7857 INFT**. And the inference runs on **0G Compute** with TEE verification.
+FX Risk Agent closes it. Every time my AI analyzes a currency pair, the full reasoning — model metadata, confidence, recommendation — gets written to **0G Storage**. The alert hits **0G Chain**. The agent itself is tokenized as an **ERC-7857 INFT**. And the inference runs on **0G Compute**, with **TEE attestation** proving the response came from the claimed model — **integrity, not privacy**.
 
 **All four 0G components. Live on Galileo today.**
 

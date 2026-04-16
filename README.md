@@ -300,7 +300,7 @@ Coverage:
 
 - FX data is currently simulated (production would use real API feeds like Alpha Vantage)
 - 0G Compute testnet only offers Qwen 2.5 7B; mainnet has GLM-5 / DeepSeek V3.1
-- StorageScan UI detail pages sometimes display empty fields due to their downstream sync; use the indexer API directly for authoritative metadata
+- StorageScan UI is a Next.js frontend backed by an independent MySQL data-sync pipeline (per the [official repo](https://github.com/0gfoundation/0g-storage-scan)) — separate from the 0G storage indexer. Submission detail pages render with empty fields when that pipeline is lagging. For authoritative real-time data, query the indexer API directly (`/file/info/{rootHash}` for metadata, `/file?root={rootHash}` for the raw upload)
 - Not yet deployed to mainnet (Chain ID 16661) — planned before May 16
 
 ## About

@@ -300,7 +300,7 @@ npm run test:ts           # TypeScript 集成测试
 
 - FX 数据目前是模拟的（生产环境会接入 Alpha Vantage 等真实 API）
 - 0G Compute 测试网只有 Qwen 2.5 7B；主网有 GLM-5 / DeepSeek V3.1
-- StorageScan UI 详情页偶尔字段为空（下游同步问题）—— 直接用 indexer API 获取权威元数据
+- StorageScan UI 是一个 Next.js 前端，背后由独立的 MySQL 数据同步管线驱动（见[官方仓库](https://github.com/0gfoundation/0g-storage-scan)）—— 和 0G storage indexer 是两套独立系统。当同步管线滞后时，submission 详情页会渲染为空字段。如需权威实时数据，直接查 indexer API（`/file/info/{rootHash}` 取元数据，`/file?root={rootHash}` 下载原始上传内容）
 - 尚未部署到主网（Chain ID 16661）—— 计划 5/16 前完成
 
 ## 关于
