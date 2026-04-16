@@ -1070,25 +1070,30 @@ function showAIDetail(alert) {
   // Storage Root Hash (可点击跳转)
   var c5 = el("div", "ai-card");
   c5.appendChild(el("div", "ai-label", "0G Storage Root Hash"));
-  var hashLink = el("a", "ai-value mono");
-  hashLink.style.cssText = "font-size:11px;word-break:break-all;color:var(--cyan);display:block;text-decoration:none;cursor:pointer";
+  var hashLink = el("span", "ai-value mono");
+  hashLink.style.cssText = "font-size:11px;word-break:break-all;color:var(--cyan);display:block;cursor:pointer";
   hashLink.textContent = alert.storageRootHash;
-  hashLink.href = "https://storagescan-galileo.0g.ai/submission/" + alert.storageRootHash;
-  hashLink.target = "_blank";
+  hashLink.title = "Click to view full AI decision";
+  hashLink.addEventListener("click", function() { openDecisionModal(alert.storageRootHash); });
   hashLink.addEventListener("mouseenter", function() { this.style.textDecoration = "underline"; });
   hashLink.addEventListener("mouseleave", function() { this.style.textDecoration = "none"; });
   c5.appendChild(hashLink);
 
   var btnRow = el("div", "");
-  btnRow.style.cssText = "margin-top:8px;display:flex;gap:8px";
+  btnRow.style.cssText = "margin-top:8px;display:flex;gap:8px;flex-wrap:wrap";
 
   var viewBtn = el("button", "");
   viewBtn.style.cssText = "font-size:12px;padding:4px 12px;background:var(--blue);color:#fff;border:none;border-radius:4px;cursor:pointer;display:inline-block;font-family:inherit";
   viewBtn.textContent = "View AI Decision";
-  viewBtn.addEventListener("click", function() {
-    openDecisionModal(alert.storageRootHash);
-  });
+  viewBtn.addEventListener("click", function() { openDecisionModal(alert.storageRootHash); });
   btnRow.appendChild(viewBtn);
+
+  var dlBtn = el("a", "");
+  dlBtn.style.cssText = "font-size:12px;padding:4px 12px;background:var(--green);color:#fff;border-radius:4px;text-decoration:none;display:inline-block";
+  dlBtn.textContent = "Download Original";
+  dlBtn.href = "https://indexer-storage-testnet-turbo.0g.ai/file?root=" + alert.storageRootHash;
+  dlBtn.target = "_blank";
+  btnRow.appendChild(dlBtn);
 
   var chainBtn = el("a", "");
   chainBtn.style.cssText = "font-size:12px;padding:4px 12px;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:4px;text-decoration:none;display:inline-block";
