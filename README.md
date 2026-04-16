@@ -47,12 +47,18 @@ Manual monitoring misses critical windows. Decision trails are scattered across 
 
 FX Risk Agent closes that gap. It's an autonomous AI agent that **monitors, judges, records, and alerts** — with every decision permanently verifiable on the 0G Network.
 
-```
-FX Data → AI Analysis → 0G Storage (full reasoning) ─┐
-              │                                       │
-              └→ Agent INFT state update              │
-                                                     ▼
-                                        0G Chain (FXRiskOracleV2)
+```mermaid
+flowchart LR
+    A[FX Data] --> B[AI Analysis]
+    B --> C["0G Storage<br/>(full reasoning)"]
+    B --> D["Agent INFT<br/>state update"]
+    C -- "rootHash" --> E["0G Chain<br/>(FXRiskOracleV2)"]
+
+    style A fill:#e3f2fd,stroke:#1565c0
+    style B fill:#fff8e1,stroke:#f9a825
+    style C fill:#e8f5e9,stroke:#2e7d32
+    style D fill:#f3e5f5,stroke:#7b1fa2
+    style E fill:#e8f5e9,stroke:#2e7d32
 ```
 
 **Core value proposition:**

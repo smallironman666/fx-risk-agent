@@ -47,12 +47,18 @@
 
 FX Risk Agent 填平这个鸿沟。它是一个自主 AI Agent，**监控、判断、记录、告警** —— 每一个决策都永久可验证，全部在 0G Network 上。
 
-```
-外汇数据 → AI 分析 → 0G Storage（完整推理过程）─┐
-              │                                  │
-              └→ Agent INFT 状态更新            │
-                                                ▼
-                               0G Chain（FXRiskOracleV2）
+```mermaid
+flowchart LR
+    A[外汇数据] --> B[AI 分析]
+    B --> C["0G Storage<br/>(完整推理过程)"]
+    B --> D["Agent INFT<br/>状态更新"]
+    C -- "rootHash" --> E["0G Chain<br/>(FXRiskOracleV2)"]
+
+    style A fill:#e3f2fd,stroke:#1565c0
+    style B fill:#fff8e1,stroke:#f9a825
+    style C fill:#e8f5e9,stroke:#2e7d32
+    style D fill:#f3e5f5,stroke:#7b1fa2
+    style E fill:#e8f5e9,stroke:#2e7d32
 ```
 
 **核心价值主张：**
