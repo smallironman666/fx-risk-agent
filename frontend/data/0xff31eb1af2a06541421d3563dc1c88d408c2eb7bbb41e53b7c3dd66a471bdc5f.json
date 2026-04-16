@@ -1,0 +1,200 @@
+{
+  "agentId": "fx-risk-agent-v0.2",
+  "sessionId": "bbcd305c-699b-458e-811b-dc5ecc8ca5bc",
+  "assessment": {
+    "currencyPair": "USD/JPY",
+    "level": 1,
+    "spotRate": 152.42375,
+    "threshold": 152.795625,
+    "reasoning": "The latest rate of 152.42375 is approaching the upper bound of 158, and the period high is 152.795625, which is within the 30% range from the current rate.",
+    "recommendation": "Monitor the USD/JPY pair closely and prepare for potential volatility spikes. Consider hedging strategies if the rate continues to rise.",
+    "confidence": 0.8,
+    "timestamp": 1776308128166,
+    "quotes": [
+      {
+        "currencyPair": "USD/JPY",
+        "bid": 152.617376,
+        "ask": 152.647876,
+        "mid": 152.632626,
+        "timestamp": 1776306914533,
+        "source": "FX_SIMULATOR"
+      },
+      {
+        "currencyPair": "USD/JPY",
+        "bid": 152.304171,
+        "ask": 152.334671,
+        "mid": 152.319421,
+        "timestamp": 1776306974533,
+        "source": "FX_SIMULATOR"
+      },
+      {
+        "currencyPair": "USD/JPY",
+        "bid": 152.221368,
+        "ask": 152.251868,
+        "mid": 152.236618,
+        "timestamp": 1776307034533,
+        "source": "FX_SIMULATOR"
+      },
+      {
+        "currencyPair": "USD/JPY",
+        "bid": 152.74771,
+        "ask": 152.77821,
+        "mid": 152.76296,
+        "timestamp": 1776307094533,
+        "source": "FX_SIMULATOR"
+      },
+      {
+        "currencyPair": "USD/JPY",
+        "bid": 152.489239,
+        "ask": 152.519739,
+        "mid": 152.504489,
+        "timestamp": 1776307154533,
+        "source": "FX_SIMULATOR"
+      },
+      {
+        "currencyPair": "USD/JPY",
+        "bid": 152.435038,
+        "ask": 152.465538,
+        "mid": 152.450288,
+        "timestamp": 1776307214533,
+        "source": "FX_SIMULATOR"
+      },
+      {
+        "currencyPair": "USD/JPY",
+        "bid": 152.666094,
+        "ask": 152.696594,
+        "mid": 152.681344,
+        "timestamp": 1776307274533,
+        "source": "FX_SIMULATOR"
+      },
+      {
+        "currencyPair": "USD/JPY",
+        "bid": 152.299838,
+        "ask": 152.330338,
+        "mid": 152.315088,
+        "timestamp": 1776307334533,
+        "source": "FX_SIMULATOR"
+      },
+      {
+        "currencyPair": "USD/JPY",
+        "bid": 152.258367,
+        "ask": 152.288867,
+        "mid": 152.273617,
+        "timestamp": 1776307394533,
+        "source": "FX_SIMULATOR"
+      },
+      {
+        "currencyPair": "USD/JPY",
+        "bid": 152.780375,
+        "ask": 152.810875,
+        "mid": 152.795625,
+        "timestamp": 1776307454533,
+        "source": "FX_SIMULATOR"
+      },
+      {
+        "currencyPair": "USD/JPY",
+        "bid": 152.663269,
+        "ask": 152.693769,
+        "mid": 152.678519,
+        "timestamp": 1776307514533,
+        "source": "FX_SIMULATOR"
+      },
+      {
+        "currencyPair": "USD/JPY",
+        "bid": 152.413219,
+        "ask": 152.443719,
+        "mid": 152.428469,
+        "timestamp": 1776307574533,
+        "source": "FX_SIMULATOR"
+      },
+      {
+        "currencyPair": "USD/JPY",
+        "bid": 152.523237,
+        "ask": 152.553737,
+        "mid": 152.538487,
+        "timestamp": 1776307634533,
+        "source": "FX_SIMULATOR"
+      },
+      {
+        "currencyPair": "USD/JPY",
+        "bid": 152.591377,
+        "ask": 152.621877,
+        "mid": 152.606627,
+        "timestamp": 1776307694533,
+        "source": "FX_SIMULATOR"
+      },
+      {
+        "currencyPair": "USD/JPY",
+        "bid": 152.412317,
+        "ask": 152.442817,
+        "mid": 152.427567,
+        "timestamp": 1776307754533,
+        "source": "FX_SIMULATOR"
+      },
+      {
+        "currencyPair": "USD/JPY",
+        "bid": 152.383839,
+        "ask": 152.414339,
+        "mid": 152.399089,
+        "timestamp": 1776307814533,
+        "source": "FX_SIMULATOR"
+      },
+      {
+        "currencyPair": "USD/JPY",
+        "bid": 152.387374,
+        "ask": 152.417874,
+        "mid": 152.402624,
+        "timestamp": 1776307874533,
+        "source": "FX_SIMULATOR"
+      },
+      {
+        "currencyPair": "USD/JPY",
+        "bid": 152.454634,
+        "ask": 152.485134,
+        "mid": 152.469884,
+        "timestamp": 1776307934533,
+        "source": "FX_SIMULATOR"
+      },
+      {
+        "currencyPair": "USD/JPY",
+        "bid": 152.439212,
+        "ask": 152.469712,
+        "mid": 152.454462,
+        "timestamp": 1776307994533,
+        "source": "FX_SIMULATOR"
+      },
+      {
+        "currencyPair": "USD/JPY",
+        "bid": 152.4085,
+        "ask": 152.439,
+        "mid": 152.42375,
+        "timestamp": 1776308054533,
+        "source": "FX_SIMULATOR"
+      }
+    ],
+    "backendLabel": "0g-compute/qwen/qwen-2.5-7b-instruct (TEE) → fallback(doubao/doubao-seed-2-0-pro-260215)",
+    "usage": {
+      "promptTokens": 750,
+      "completionTokens": 130
+    },
+    "verification": {
+      "providerAddress": "0xa48f01287233509FD694a22Bf840225062E67836",
+      "chatId": "chatcmpl-68e2144d4eed4ac6a4a0ffd273b2b2c9",
+      "verified": true
+    },
+    "actualBackend": "0g-compute"
+  },
+  "modelUsed": "0g-compute/pending-init (TEE) → fallback(doubao/doubao-seed-2-0-pro-260215)",
+  "promptTokens": 750,
+  "completionTokens": 130,
+  "createdAt": "2026-04-16T02:55:28.167Z",
+  "aiBackend": "0g-compute",
+  "inferenceVerification": {
+    "providerAddress": "0xa48f01287233509FD694a22Bf840225062E67836",
+    "chatId": "chatcmpl-68e2144d4eed4ac6a4a0ffd273b2b2c9",
+    "verified": true
+  },
+  "agentTokenId": 0,
+  "agentContract": "0xAA540f42f0d20588f183E3B92B3b617991fa22D1",
+  "storageRootHash": "0xff31eb1af2a06541421d3563dc1c88d408c2eb7bbb41e53b7c3dd66a471bdc5f"
+}

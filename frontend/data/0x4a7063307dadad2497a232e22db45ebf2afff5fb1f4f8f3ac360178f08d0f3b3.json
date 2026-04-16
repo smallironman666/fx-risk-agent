@@ -1,0 +1,200 @@
+{
+  "agentId": "fx-risk-agent-v0.2",
+  "sessionId": "118e9e40-efba-44b7-9096-a6b647d40bbf",
+  "assessment": {
+    "currencyPair": "GBP/USD",
+    "level": 1,
+    "spotRate": 1.284343,
+    "threshold": 0.9,
+    "reasoning": "The latest rate of 1.284343 is close to the upper bound of 1.3, and the period change of 0.6024% indicates a significant increase in volatility, which is approaching the max volatility threshold.",
+    "recommendation": "Monitor the GBP/USD pair closely and consider hedging strategies to mitigate potential losses if the rate continues to rise.",
+    "confidence": 0.8,
+    "timestamp": 1776307539669,
+    "quotes": [
+      {
+        "currencyPair": "GBP/USD",
+        "bid": 1.276527,
+        "ask": 1.276779,
+        "mid": 1.276653,
+        "timestamp": 1776306329357,
+        "source": "FX_SIMULATOR"
+      },
+      {
+        "currencyPair": "GBP/USD",
+        "bid": 1.268501,
+        "ask": 1.268753,
+        "mid": 1.268627,
+        "timestamp": 1776306389357,
+        "source": "FX_SIMULATOR"
+      },
+      {
+        "currencyPair": "GBP/USD",
+        "bid": 1.266159,
+        "ask": 1.266411,
+        "mid": 1.266285,
+        "timestamp": 1776306449357,
+        "source": "FX_SIMULATOR"
+      },
+      {
+        "currencyPair": "GBP/USD",
+        "bid": 1.255864,
+        "ask": 1.256116,
+        "mid": 1.25599,
+        "timestamp": 1776306509357,
+        "source": "FX_SIMULATOR"
+      },
+      {
+        "currencyPair": "GBP/USD",
+        "bid": 1.260094,
+        "ask": 1.260346,
+        "mid": 1.26022,
+        "timestamp": 1776306569357,
+        "source": "FX_SIMULATOR"
+      },
+      {
+        "currencyPair": "GBP/USD",
+        "bid": 1.271673,
+        "ask": 1.271925,
+        "mid": 1.271799,
+        "timestamp": 1776306629357,
+        "source": "FX_SIMULATOR"
+      },
+      {
+        "currencyPair": "GBP/USD",
+        "bid": 1.248611,
+        "ask": 1.248863,
+        "mid": 1.248737,
+        "timestamp": 1776306689357,
+        "source": "FX_SIMULATOR"
+      },
+      {
+        "currencyPair": "GBP/USD",
+        "bid": 1.265269,
+        "ask": 1.265521,
+        "mid": 1.265395,
+        "timestamp": 1776306749357,
+        "source": "FX_SIMULATOR"
+      },
+      {
+        "currencyPair": "GBP/USD",
+        "bid": 1.269251,
+        "ask": 1.269503,
+        "mid": 1.269377,
+        "timestamp": 1776306809357,
+        "source": "FX_SIMULATOR"
+      },
+      {
+        "currencyPair": "GBP/USD",
+        "bid": 1.272634,
+        "ask": 1.272886,
+        "mid": 1.27276,
+        "timestamp": 1776306869357,
+        "source": "FX_SIMULATOR"
+      },
+      {
+        "currencyPair": "GBP/USD",
+        "bid": 1.262158,
+        "ask": 1.26241,
+        "mid": 1.262284,
+        "timestamp": 1776306929357,
+        "source": "FX_SIMULATOR"
+      },
+      {
+        "currencyPair": "GBP/USD",
+        "bid": 1.256164,
+        "ask": 1.256416,
+        "mid": 1.25629,
+        "timestamp": 1776306989357,
+        "source": "FX_SIMULATOR"
+      },
+      {
+        "currencyPair": "GBP/USD",
+        "bid": 1.279462,
+        "ask": 1.279714,
+        "mid": 1.279588,
+        "timestamp": 1776307049357,
+        "source": "FX_SIMULATOR"
+      },
+      {
+        "currencyPair": "GBP/USD",
+        "bid": 1.254268,
+        "ask": 1.25452,
+        "mid": 1.254394,
+        "timestamp": 1776307109357,
+        "source": "FX_SIMULATOR"
+      },
+      {
+        "currencyPair": "GBP/USD",
+        "bid": 1.276483,
+        "ask": 1.276735,
+        "mid": 1.276609,
+        "timestamp": 1776307169357,
+        "source": "FX_SIMULATOR"
+      },
+      {
+        "currencyPair": "GBP/USD",
+        "bid": 1.27136,
+        "ask": 1.271612,
+        "mid": 1.271486,
+        "timestamp": 1776307229357,
+        "source": "FX_SIMULATOR"
+      },
+      {
+        "currencyPair": "GBP/USD",
+        "bid": 1.257899,
+        "ask": 1.258151,
+        "mid": 1.258025,
+        "timestamp": 1776307289357,
+        "source": "FX_SIMULATOR"
+      },
+      {
+        "currencyPair": "GBP/USD",
+        "bid": 1.25522,
+        "ask": 1.255472,
+        "mid": 1.255346,
+        "timestamp": 1776307349357,
+        "source": "FX_SIMULATOR"
+      },
+      {
+        "currencyPair": "GBP/USD",
+        "bid": 1.246957,
+        "ask": 1.247209,
+        "mid": 1.247083,
+        "timestamp": 1776307409357,
+        "source": "FX_SIMULATOR"
+      },
+      {
+        "currencyPair": "GBP/USD",
+        "bid": 1.284217,
+        "ask": 1.284469,
+        "mid": 1.284343,
+        "timestamp": 1776307469357,
+        "source": "FX_SIMULATOR"
+      }
+    ],
+    "backendLabel": "0g-compute/qwen/qwen-2.5-7b-instruct (TEE) → fallback(doubao/doubao-seed-2-0-pro-260215)",
+    "usage": {
+      "promptTokens": 715,
+      "completionTokens": 117
+    },
+    "verification": {
+      "providerAddress": "0xa48f01287233509FD694a22Bf840225062E67836",
+      "chatId": "chatcmpl-94b7cd48bfc74c999874398d50088c77",
+      "verified": true
+    },
+    "actualBackend": "0g-compute"
+  },
+  "modelUsed": "0g-compute/pending-init (TEE) → fallback(doubao/doubao-seed-2-0-pro-260215)",
+  "promptTokens": 715,
+  "completionTokens": 117,
+  "createdAt": "2026-04-16T02:45:39.669Z",
+  "aiBackend": "0g-compute",
+  "inferenceVerification": {
+    "providerAddress": "0xa48f01287233509FD694a22Bf840225062E67836",
+    "chatId": "chatcmpl-94b7cd48bfc74c999874398d50088c77",
+    "verified": true
+  },
+  "agentTokenId": 0,
+  "agentContract": "0xAA540f42f0d20588f183E3B92B3b617991fa22D1",
+  "storageRootHash": "0x4a7063307dadad2497a232e22db45ebf2afff5fb1f4f8f3ac360178f08d0f3b3"
+}
