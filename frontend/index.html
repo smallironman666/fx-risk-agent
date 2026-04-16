@@ -608,7 +608,7 @@
   <div class="sep"></div>
   <div class="item"><span class="label">Agent</span><span id="agentStatus">Idle</span></div>
   <div class="sep"></div>
-  <div class="item"><span class="label">Model</span><span>Doubao Seed 2.0 Pro</span></div>
+  <div class="item"><span class="label">Model</span><span id="topbar-model">Doubao + 0G Compute (Dual)</span></div>
   <div class="sep"></div>
   <div class="item"><span class="label">Contract</span><span class="mono" id="topContract">-</span></div>
   <div class="sep"></div>
@@ -938,10 +938,38 @@ function renderTimeline(alerts) {
     return;
   }
 
-  // 最新的在上面
+  // 分 V2 / V1，各自按时间倒序
   var sorted = alerts.slice().sort(function(a, b) { return Number(b.timestamp) - Number(a.timestamp); });
+  var v2List = sorted.filter(function(a) { return a.version === "v2"; });
+  var v1List = sorted.filter(function(a) { return a.version !== "v2"; });
 
-  sorted.forEach(function(a, idx) {
+  // 先渲染 V2
+  v2List.forEach(function(a) { container.appendChild(buildTimelineItem(a)); });
+
+  // V1 折叠区域
+  if (v1List.length > 0) {
+    var toggle = el("button", "");
+    toggle.style.cssText = "display:flex;align-items:center;gap:6px;width:100%;padding:10px 16px;margin:8px 0 4px;background:var(--surface);border:1px dashed var(--border);border-radius:6px;color:var(--muted);font-size:12px;cursor:pointer;font-family:inherit;transition:all .15s";
+    toggle.textContent = "▸ Show " + v1List.length + " Legacy V1 Alerts (historical, pre-Agent-ID)";
+    var v1Container = el("div", "");
+    v1Container.style.display = "none";
+    v1List.forEach(function(a) { v1Container.appendChild(buildTimelineItem(a)); });
+    toggle.addEventListener("click", function() {
+      var open = v1Container.style.display !== "none";
+      v1Container.style.display = open ? "none" : "block";
+      toggle.textContent = (open ? "▸ Show " : "▾ Hide ") + v1List.length + " Legacy V1 Alerts (historical, pre-Agent-ID)";
+    });
+    container.appendChild(toggle);
+    container.appendChild(v1Container);
+  }
+}
+
+function buildTimelineItem(a) {
+    var level = LEVELS[Number(a.level)];
+    var item = el("div", "tl-item");
+
+    // 保持 idx 不用（从原 forEach 改成独立函数）
+    var idx = 0;
     var level = LEVELS[Number(a.level)];
     var item = el("div", "tl-item");
 
@@ -1027,8 +1055,7 @@ function renderTimeline(alerts) {
     card.addEventListener("click", function() { showAIDetail(a); });
 
     item.appendChild(card);
-    container.appendChild(item);
-  });
+    return item;
 }
 
 function showAIDetail(alert) {
