@@ -1035,7 +1035,7 @@ function buildTimelineItem(a) {
     var storageLabel = document.createTextNode("Storage: ");
     hashes.appendChild(storageLabel);
     var storageLink = el("a", "", a.storageRootHash.slice(0, 22) + "...");
-    storageLink.href = "https://storagescan-galileo.0g.ai";
+    storageLink.href = "https://indexer-storage-testnet-turbo.0g.ai/file?root=" + a.storageRootHash;
     storageLink.target = "_blank";
     hashes.appendChild(storageLink);
 
@@ -1194,8 +1194,8 @@ async function loadDashboard() {
     // 并行读取 V1 + V2 的 alerts
     var totalCount = v1Count + v2Count;
     var alertResults = await Promise.allSettled([
-      v1Count > 0 ? v1Contract.getLatestAlerts(Math.min(v1Count, 20)) : Promise.resolve([]),
-      v2Count > 0 ? v2Contract.getLatestAlerts(Math.min(v2Count, 20)) : Promise.resolve([]),
+      v1Count > 0 ? v1Contract.getLatestAlerts(Math.min(v1Count, 100)) : Promise.resolve([]),
+      v2Count > 0 ? v2Contract.getLatestAlerts(Math.min(v2Count, 100)) : Promise.resolve([]),
     ]);
 
     var v1Alerts = alertResults[0].status === "fulfilled" ? alertResults[0].value : [];
