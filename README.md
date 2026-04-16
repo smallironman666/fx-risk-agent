@@ -4,112 +4,154 @@
 
 # FX Risk Agent
 
-> A verifiable AI-powered FX risk monitoring agent on 0G Network — every decision permanently stored, on-chain recorded, fully auditable.
+> A verifiable AI-powered FX risk monitoring agent on 0G Network — every decision permanently stored, on-chain recorded, **fetched directly from decentralized storage in the browser**.
 
 <p align="center">
   <a href="https://youtu.be/j2eaoJN18a8">
     <img src="https://img.shields.io/badge/▶_Watch_Demo-YouTube-red?style=for-the-badge&logo=youtube" alt="Demo Video" />
   </a>
-  <a href="http://fx.0xsmall.com">
+  <a href="https://smallironman666.github.io/fx-risk-agent/">
     <img src="https://img.shields.io/badge/📊_Live-Dashboard-blue?style=for-the-badge" alt="Live Dashboard" />
   </a>
-  <a href="https://chainscan-galileo.0g.ai/address/0x12030bc39dd18E2e8e4F10e685b7B7E639F0925A">
+  <a href="https://chainscan-galileo.0g.ai/address/0x2abde2687923ffb9a5be4c6df3aac68a4f0a93ca">
     <img src="https://img.shields.io/badge/🔗_View-On_Chain-green?style=for-the-badge" alt="On-Chain" />
   </a>
 </p>
 
 ## Live Demo
 
+- **Dashboard**: https://smallironman666.github.io/fx-risk-agent/ *(static site, fetches data directly from 0G Storage)*
 - **Demo Video**: [Watch on YouTube (2:37)](https://youtu.be/j2eaoJN18a8)
-- **Dashboard**: [http://fx.0xsmall.com](http://fx.0xsmall.com)
 
 **On-Chain Contracts (0G Galileo Testnet, Chain ID 16602):**
 
 | Contract | Address | Role |
 |---|---|---|
-| **FXRiskOracleV2** | [`0x2abde2687923ffb9a5be4c6df3aac68a4f0a93ca`](https://chainscan-galileo.0g.ai/address/0x2abde2687923ffb9a5be4c6df3aac68a4f0a93ca) | Primary oracle with Agent ID linkage |
-| **FXRiskAgentINFT** | [`0xAA540f42f0d20588f183E3B92B3b617991fa22D1`](https://chainscan-galileo.0g.ai/address/0xAA540f42f0d20588f183E3B92B3b617991fa22D1) | Agent identity (ERC-7857 inspired INFT) |
+| **FXRiskOracleV2** | [`0x2abde2687923ffb9a5be4c6df3aac68a4f0a93ca`](https://chainscan-galileo.0g.ai/address/0x2abde2687923ffb9a5be4c6df3aac68a4f0a93ca) | Primary oracle with Agent ID linkage + access control |
+| **FXRiskAgentINFT** | [`0xAA540f42f0d20588f183E3B92B3b617991fa22D1`](https://chainscan-galileo.0g.ai/address/0xAA540f42f0d20588f183E3B92B3b617991fa22D1) | Agent identity (ERC-7857 inspired INFT) — Ownable + ReentrancyGuard |
 | **FXRiskOracle V1** | [`0x12030bc39dd18E2e8e4F10e685b7B7E639F0925A`](https://chainscan-galileo.0g.ai/address/0x12030bc39dd18E2e8e4F10e685b7B7E639F0925A) | Legacy (historical audit trail) |
 
 ## Problem
 
-The cross-border payment industry processes billions in daily FX transactions. Common risk patterns include:
+Cross-border payment companies process billions in FX transactions every day. Common risk patterns:
 
-- **Currency pair inversion** — Upstream rate sources occasionally return inverted pairs (e.g., USD/X vs X/USD swap), potentially producing 100x+ pricing errors
+- **Currency pair inversion** — Upstream rate sources occasionally return inverted pairs (USD/X vs X/USD), potentially producing 100x+ pricing errors
 - **Rate source outage** — External feed disruptions cause FX quote generation to fail, impacting customer transactions
-- **No audit trail** — After incidents, teams can't reconstruct what the system knew, when it knew it, and what decisions were made
+- **No audit trail** — After incidents, teams can't reconstruct what the AI knew, when it knew it, and what decisions were made
 
-Manual monitoring misses critical windows. Decision trails are scattered. Post-incident audits lack verifiable evidence.
+Manual monitoring misses critical windows. Decision trails are scattered across emails and spreadsheets. Post-incident audits lack verifiable evidence.
+
+**The deeper gap**: "AI makes decisions" and "AI decisions are auditable" are worlds apart. Most AI systems today produce outputs with no cryptographic trail.
 
 ## Solution
 
-FX Risk Agent is an autonomous AI agent that **monitors, judges, records, and alerts** — with every decision permanently verifiable on the 0G blockchain.
+FX Risk Agent closes that gap. It's an autonomous AI agent that **monitors, judges, records, and alerts** — with every decision permanently verifiable on the 0G Network.
 
 ```
-FX Market Data → AI Analysis → Alert (HIGH/CRITICAL) → 0G Storage (full log) → 0G Chain (on-chain proof)
+FX Data → AI Analysis → 0G Storage (full reasoning) ─┐
+              │                                       │
+              └→ Agent INFT state update              │
+                                                     ▼
+                                        0G Chain (FXRiskOracleV2)
 ```
 
 **Core value proposition:**
 1. **AI cuts noise** — Not threshold alerts that fire 100x/day. AI understands market context, only escalates when it matters.
 2. **Structured audit trail** — Every decision (including "no risk" judgments) is permanently stored with full reasoning on 0G Storage.
-3. **On-chain proof** — Risk alerts recorded on-chain with Storage rootHash. Anyone can verify: chain record → download full AI decision log → check reasoning.
+3. **On-chain proof** — Risk alerts recorded on-chain with Storage rootHash. Anyone can verify: chain record → fetch full AI decision log from 0G Storage → check reasoning.
 
 ## Architecture
 
 ```mermaid
 flowchart TD
-    A["FX Market Data<br/>(Simulated / Real API)"] --> B["AI Risk Analyzer<br/>(OpenAI-compatible)"]
-    B --> C{"Risk Assessment"}
-    C -->|"HIGH / CRITICAL"| D["Webhook Alert<br/>Notify Operations"]
-    C --> E["0G Storage<br/>Full Decision Log"]
-    C --> F["0G Chain<br/>FXRiskOracle Contract"]
-    E -->|"rootHash"| F
+    A["FX Market Data"] --> B["AI Risk Analyzer<br/>(Dual Backend)"]
+    B --> B1["Doubao Seed 2.0 Pro<br/>(primary)"]
+    B --> B2["0G Compute<br/>Qwen 2.5 7B + TEE<br/>(production path)"]
+    B1 --> C{"Risk Assessment"}
+    B2 --> C
+    C -->|"HIGH / CRITICAL"| D["Webhook Alert"]
+    C --> E["0G Storage<br/>Full Decision Log JSON"]
+    E -->|"rootHash"| F["0G Chain<br/>FXRiskOracleV2.submitAlert"]
+    E -->|"session summary"| G["FXRiskAgentINFT<br/>updateAgentState()"]
+    F -.->|"CORS *, browser fetch"| H["Dashboard<br/>(static HTML on GitHub Pages)"]
+    E -.->|"/file?root=<hash>"| H
 
     style A fill:#e3f2fd,stroke:#1565c0
     style B fill:#fff8e1,stroke:#f9a825
     style D fill:#fce4ec,stroke:#c62828
     style E fill:#e8f5e9,stroke:#2e7d32
     style F fill:#e8f5e9,stroke:#2e7d32
+    style G fill:#f3e5f5,stroke:#7b1fa2
+    style H fill:#f0f4c3,stroke:#827717
 ```
 
 ## Why 0G?
 
 | 0G Component | Status | What We Use It For | On-chain Proof |
 |---|---|---|---|
-| **0G Storage** | Live | Permanent archive of full AI decision logs (JSON with reasoning) — tamper-proof audit trail | Every alert's `storageRootHash` field |
-| **0G Chain** | Live | `FXRiskOracleV2` records alerts with `agentTokenId` + `aiBackend` fields; V1 preserved for audit continuity | [Contract `0x2ddfe5...`](https://chainscan-galileo.0g.ai/address/0x2abde2687923ffb9a5be4c6df3aac68a4f0a93ca) |
-| **0G Compute** | Live | Dual-backend AI: Doubao (default) and **0G Compute Network** (Qwen 2.5 7B via provider `0xa48f012...`). Switchable via `AI_BACKEND=0g-compute` | Alerts where `aiBackend="0g-compute"` — fully on-chain settled via `ledger` + `inference` modules |
-| **Agent ID (ERC-7857 INFT)** | Live | `FXRiskAgentINFT` tokenizes agent identity. Every session calls `updateAgentState()` incrementing on-chain `inferenceCount`. | [`tokenId #0` on INFT contract](https://chainscan-galileo.0g.ai/address/0xAA540f42f0d20588f183E3B92B3b617991fa22D1) |
+| **0G Storage** | Live | Permanent archive of full AI decision logs (JSON with reasoning) — tamper-proof audit trail | Every alert's `storageRootHash` field, resolvable via indexer API |
+| **0G Chain** | Live | `FXRiskOracleV2` records alerts with `agentTokenId` + `aiBackend` fields; V1 preserved for audit continuity | [FXRiskOracleV2 contract](https://chainscan-galileo.0g.ai/address/0x2abde2687923ffb9a5be4c6df3aac68a4f0a93ca) |
+| **0G Compute** | Live | Dual-backend inference via `@0glabs/0g-serving-broker`. 0G Compute (Qwen 2.5 7B + TEE) as primary, Doubao as graceful fallback. | Alerts with `aiBackend="0g-compute"` — on-chain settled via ledger + inference modules, TEE-attested |
+| **Agent ID (ERC-7857 INFT)** | Live | `FXRiskAgentINFT` tokenizes agent identity. Every session calls `updateAgentState()` incrementing on-chain `inferenceCount`. | [Token #0 on INFT contract](https://chainscan-galileo.0g.ai/address/0xAA540f42f0d20588f183E3B92B3b617991fa22D1) |
 
 **Not integrated** (by design, see [ADR-004](./docs/adr/004-skip-tee-privacy.md)): Privacy / Secure Execution. Our use case is audit/transparency, not confidentiality.
 
 ## 0G Integration Verification
 
-```
-1. Chain Explorer → See 4 on-chain alerts with rootHash
-   https://chainscan-galileo.0g.ai/address/0x12030bc39dd18E2e8e4F10e685b7B7E639F0925A
+Anyone can independently verify that the Dashboard's data actually lives on 0G Storage:
 
-2. Each alert contains:
-   - currencyPair (e.g. "USD/CNY")
-   - riskLevel (LOW/MEDIUM/HIGH/CRITICAL)
-   - spotRate (6-decimal fixed point)
-   - storageRootHash → points to full decision log in 0G Storage
-   - timestamp (block time)
-   - reporter (agent wallet)
+```bash
+# 1. Pick any on-chain alert from the Chain Explorer
+https://chainscan-galileo.0g.ai/address/0x2abde2687923ffb9a5be4c6df3aac68a4f0a93ca
 
-3. Download full decision log from 0G Storage using rootHash
-   → Contains complete AI reasoning, market data, and recommendation
+# 2. Extract its storageRootHash field, e.g.
+ROOT=0xfec46db02f1313e3b0e6c9833985ae83387f9eeb0f916ca88a8276d63da75842
+
+# 3. Check it's finalized on 0G Storage (indexer metadata)
+curl "https://indexer-storage-testnet-turbo.0g.ai/file/info/$ROOT"
+# → { "code": 0, "data": { "finalized": true, "size": 5399, ... } }
+
+# 4. Download the full AI decision log (same bytes the Dashboard fetches)
+curl "https://indexer-storage-testnet-turbo.0g.ai/file?root=$ROOT"
+# → Full JSON with AI reasoning, confidence, recommendation, TEE verification...
 ```
+
+The Dashboard does exactly this in the browser — CORS is open (`Access-Control-Allow-Origin: *`), no backend required.
+
+## Security Architecture
+
+Two deliberate design decisions close the trust boundary at both ends:
+
+**Access control — `onlyOwner` mint + `ownerOf` submission:**
+- Minting a new Agent INFT requires `onlyOwner` on the NFT contract
+- Submitting an alert on behalf of Agent #N requires `INFT.ownerOf(N) == msg.sender`
+- Result: no permissionless path lets an attacker forge "official" AI alerts
+
+**Reentrancy protection on state mutations:**
+- `mintAgent` and `updateAgentState` both inherit OpenZeppelin's `ReentrancyGuard`
+- `mintAgent` writes metadata **before** the external `_safeMint` call — malicious `ERC721Receiver` can't observe half-written state
+
+Both contracts use OpenZeppelin 5.6.1 battle-tested primitives (`Ownable`, `ReentrancyGuard`, `ERC721`). No custom access-control rolling.
+
+## Dashboard Architecture (Static + Truly Decentralized)
+
+The Dashboard is a **single static HTML file on GitHub Pages** with no backend. When you click "View AI Decision":
+
+1. Browser `fetch`'s `https://indexer-storage-testnet-turbo.0g.ai/file?root={rootHash}` directly
+2. 0G's indexer serves the identical bytes that were uploaded on-chain
+3. A local mirror in `frontend/data/` acts as graceful fallback only
+
+This is what "Web3 frontend" looks like when it's not just aesthetic: **no proxy, no middleman, no trusted API**. Any user can verify the same URL with `curl` and get the same bytes.
 
 ## Tech Stack
 
 | Layer | Technology | Notes |
 |---|---|---|
-| AI Model | Doubao Seed 2.0 Pro | OpenAI-compatible, swappable |
-| Smart Contract | Solidity 0.8.24 | Compiled with Foundry |
-| 0G SDK | @0gfoundation/0g-ts-sdk 1.2.1 | Storage upload + chain interaction |
-| Chain | 0G Galileo Testnet (16602) | EVM-compatible |
-| Frontend | Vanilla HTML + ethers.js | Reads directly from 0G Chain |
+| AI Inference | **Dual Backend**: Doubao Seed 2.0 Pro + 0G Compute (Qwen 2.5 7B, TEE) | Auto-fallback with `fallbackReason` recorded on-chain |
+| Smart Contracts | Solidity 0.8.24 + OpenZeppelin 5.6.1 | Compiled & tested with Foundry |
+| 0G SDKs | `@0gfoundation/0g-ts-sdk`, `@0glabs/0g-serving-broker` | Storage upload + verifiable inference |
+| Chain | 0G Galileo Testnet (Chain ID 16602) | EVM-compatible |
+| Frontend | Vanilla HTML + ethers.js | **Fetches decision logs directly from 0G Storage** (no backend) |
 | Language | TypeScript | End-to-end |
 
 ## Quick Start
@@ -120,31 +162,34 @@ npm install
 
 # Copy and configure environment
 cp .env.example .env
-# Edit .env: add PRIVATE_KEY, AI_API_KEY
+# Edit .env: add PRIVATE_KEY, AI_API_KEY (Doubao)
 
-# Compile smart contract (requires Foundry)
+# Compile smart contracts (requires Foundry)
 forge build
 
-# Deploy to 0G Galileo Testnet (need testnet tokens from faucet.0g.ai)
-source .env && forge script script/Deploy.s.sol \
-  --rpc-url $OG_RPC_URL --broadcast --private-key $PRIVATE_KEY --legacy --with-gas-price 3000000000
+# Deploy INFT first, then Oracle V2 (Oracle depends on INFT address)
+source .env && forge script script/DeployAgentINFT.s.sol \
+  --rpc-url $OG_RPC_URL --broadcast --private-key $PRIVATE_KEY \
+  --legacy --with-gas-price 3000000000
 
-# Run the AI agent (default: Doubao backend)
-npm run agent
+# Mint Token #0 (run once)
+npx ts-node src/tools/mintAgent.ts
 
-# Run with specific scenario (for demo)
-npx ts-node src/index.ts --pair USD/CNY --scenario crisis
+# Deploy Oracle V2
+source .env && forge script script/DeployOracleV2.s.sol \
+  --rpc-url $OG_RPC_URL --broadcast --private-key $PRIVATE_KEY \
+  --legacy --with-gas-price 3000000000
 
-# ---- Optional: switch to 0G Compute backend ----
-# One-time bootstrap: create ledger (3 OG) + fund provider sub-account (1 OG)
-# Requires ≥5 OG in wallet
+# Run the agent
+npm run agent                                              # default backend
+AI_BACKEND=0g-compute npm run agent                        # verifiable inference via 0G Compute
+npx ts-node src/index.ts --pair USD/CNY --scenario crisis  # specific scenario
+
+# Bootstrap 0G Compute (one-time, costs ~4 OG)
 npm run bootstrap-compute
 
-# Then run agent with 0G Compute (Qwen 2.5 7B via provider TEE)
-AI_BACKEND=0g-compute npm run agent
-
-# Fetch full AI decision log from 0G Storage by rootHash
-npx ts-node src/tools/fetchLog.ts 0x526564ff261184de3fd17c90500c66aef0cee9f14e6fc12328b0abc35297fcdb
+# Fetch any decision log from 0G Storage by rootHash
+npx ts-node src/tools/fetchLog.ts 0xfec46db02f1313e3b0e6c9833985ae83387f9eeb0f916ca88a8276d63da75842
 ```
 
 ## Currency Pairs Monitored
@@ -169,96 +214,94 @@ npx ts-node src/tools/fetchLog.ts 0x526564ff261184de3fd17c90500c66aef0cee9f14e6f
 
 - [x] AI risk analysis with verifiable decision logs
 - [x] 0G Storage integration (permanent audit trail)
-- [x] On-chain alert recording (FXRiskOracle V1 + V2 contracts)
+- [x] On-chain alert recording (FXRiskOracle V1 + V2)
+- [x] **0G Compute integration** (dual-backend with TEE verification + automatic fallback)
+- [x] **Agent ID (ERC-7857 INFT)** with on-chain `inferenceCount`
+- [x] Contract-level security (Ownable + ReentrancyGuard + access-controlled alerts)
+- [x] Dashboard with direct-from-0G-Storage decision log viewer
 - [x] Webhook alerting for HIGH/CRITICAL events
-- [x] Web dashboard (verifiable risk cockpit with V1/V2 merge + Agent badges)
-- [x] CLI tool: fetch full AI log from 0G Storage by rootHash
-- [x] **0G Compute integration** (dual-backend: Doubao + 0G Compute Qwen 2.5 7B with TEE)
-- [x] **0G Agent ID** (ERC-7857 INFT, on-chain `inferenceCount`, accountable identity)
+- [x] CLI tool to fetch full AI decision log by rootHash
+- [ ] INFT `tokenURI` — wallet/explorer-renderable Agent metadata
+- [ ] Historical Replay Mode (archived decision timeline)
 - [ ] Real FX data feed (Alpha Vantage / Twelve Data)
-- [ ] 0G Compute Sealed Inference for strategy privacy (mainnet TEE)
-- [ ] Mainnet deployment
+- [ ] Mainnet deployment (0G Aristotle, Chain ID 16661)
 - [ ] Multi-agent collaboration per currency corridor
 
 ## Agent ID (ERC-7857 INFT)
 
-The agent has a **first-class on-chain identity**. This isn't just metadata — it's a tokenized AI asset:
+The agent has a **first-class, accountable on-chain identity** — not just metadata, but a tokenized AI asset:
 
 ```
-FXRiskAgentINFT contract: 0xAA540f42f0d20588f183E3B92B3b617991fa22D1
-Agent Token ID: #0
-Name: "FX Risk Agent"
-Version: v0.2.0
-Model Type: fx-risk-inference
-Storage Root: 0x6a271e80f82f8bea6997756e9719ccf25587aaa3313c85c03bf89e4550729d96
-             (points to full metadata JSON on 0G Storage)
+FXRiskAgentINFT: 0xAA540f42f0d20588f183E3B92B3b617991fa22D1
+Agent Token ID : #0
+Name           : "FX Risk Agent"
+Version        : v0.2.0
+Model Type     : fx-risk-inference
+Storage Root   : 0xd5f125f770c7cef63e5a2316e037177340d2ace54b767b1c77124b219fefc517
+                 (points to full metadata JSON on 0G Storage)
 ```
 
 **Every session updates on-chain state**:
 - Session summary (processed pairs, decision log hashes) uploaded to 0G Storage
-- `FXRiskAgentINFT.updateAgentState(tokenId, sessionRootHash)` called
-- `inferenceCount` increments on-chain — provable history of agent activity
+- `updateAgentState(tokenId, sessionRootHash)` called on INFT
+- `inferenceCount` increments — provable history of agent activity
 
-**Every V2 alert is linked to the Agent ID**:
+**Every V2 alert is cryptographically linked to the Agent ID**:
 ```solidity
 submitAlert(pair, level, rate, threshold, rootHash, agentTokenId, aiBackend)
+// Requires: INFT.ownerOf(agentTokenId) == msg.sender
 ```
 
 **Why this matters**:
-- **Accountability**: Any decision is traceable to a specific agent version with a signed system prompt
-- **Tradeability**: Future AI-as-an-asset models — the INFT can be transferred/licensed
-- **Auditability**: Regulators can query `getAgent(tokenId)` for full metadata
+- **Accountability**: Every decision traceable to a specific agent version with a signed system prompt
+- **Tradeability**: The INFT can be transferred/licensed — Memory *is* an asset
+- **Auditability**: Regulators can query `getAgent(tokenId)` for full provenance
 
 ## Dual AI Backend
 
-Switch between two AI backends via `AI_BACKEND` env variable:
+Switch backends via `AI_BACKEND` env variable:
 
 ```bash
-# Doubao (default) — high-quality Chinese AI, used for demo
-AI_BACKEND=doubao npm run agent
-
-# 0G Compute — decentralized inference on 0G Network
-AI_BACKEND=0g-compute npm run agent
+AI_BACKEND=doubao     npm run agent   # OpenAI-compatible API
+AI_BACKEND=0g-compute npm run agent   # verifiable TEE inference + auto Doubao fallback
 ```
 
 | Backend | Model | Verification | Use Case |
 |---|---|---|---|
-| `doubao` | Doubao Seed 2.0 Pro | OpenAI-compatible API | Production demo with best reasoning quality |
-| `0g-compute` | Qwen 2.5 7B (testnet) / GLM-5 (mainnet) | Decentralized inference with on-chain settlement | Demonstrate native 0G inference path; TEE verification available as a platform property, not the selection reason |
+| `doubao` | Doubao Seed 2.0 Pro | OpenAI-compatible | Demo-quality reasoning |
+| `0g-compute` | Qwen 2.5 7B (testnet) | TEE attestation via `broker.inference.processResponse()` | Verifiable inference with on-chain settlement |
 
-**Why both backends, not just one?**
+**Why both?**
 
-We chose Doubao as the default because Qwen 2.5 7B (the only testnet model available on 0G Compute today) produces visibly weaker reasoning in demo videos. The `0g-compute` backend demonstrates that the agent can run on decentralized inference infrastructure with **on-chain settlement and verifiability** — useful for scenarios that require proof of "which model produced this output on which input".
+On testnet, 0G Compute exposes Qwen 2.5 7B — a capable but smaller model than Doubao. The `FallbackLLMBackend` wrapper runs 0G Compute as primary and transparently falls back to Doubao when the TEE path fails (timeout, provider unavailable, etc.). The actual backend that produced each response is recorded on-chain in the `aiBackend` field, and the fallback reason is persisted inside the DecisionLog on 0G Storage.
 
-Every `0g-compute` response optionally passes through `broker.inference.processResponse(providerAddress, chatId)`, which returns a `verified: true/false` flag indicating whether the provider's hardware-signed attestation matched the response. This is recorded in `DecisionLog.inferenceVerification` — **not for privacy, but for integrity**.
-
-> **Note**: We deliberately did NOT check the "Privacy / Secure Execution" component on HackQuest. Our use case is audit/transparency, not confidentiality. See [ADR-004](./docs/adr/004-skip-tee-privacy.md) for the full reasoning.
+No ghosts in the machine — on-chain data always reflects which backend actually produced the result.
 
 ## Testing
 
 ```bash
 npm test                  # run everything
 npm run test:sol          # Foundry contract tests
-npm run test:ts           # TypeScript unit tests
+npm run test:ts           # TypeScript integration tests
 ```
 
-Current coverage:
-- **19 Solidity tests** across `FXRiskAgentINFT` and `FXRiskOracleV2` (mint, update, events, risk level mapping, agent accounting, access control)
-- **14 TypeScript tests** across AI response parser (markdown fences, missing fields, confidence clamping), FX simulator (data shape, timestamp ordering, scenario variance), and session summary builder
-- **33 tests passing** in under 200ms
+Coverage:
+- **28 Solidity tests** across `FXRiskAgentINFT` (Ownable mint, ownership transfer, reentrancy) and `FXRiskOracleV2` (access control, DoS boundaries, multi-backend scenarios)
+- **19 TypeScript tests** across AI response parser, FX simulator, session summary builder, and FallbackLLMBackend (primary success / timeout fallback / both-down paths)
+- **47 tests passing** in under 200ms
 
 ## Known Limitations
 
 - FX data is currently simulated (production would use real API feeds like Alpha Vantage)
-- 0G Compute on testnet only offers Qwen 2.5 7B (weaker than Doubao Seed 2.0 Pro); mainnet has GLM-5, DeepSeek V3.1
-- StorageScan does not support direct file lookup by root hash via URL
-- Not deployed to mainnet (requires real 0G tokens, planned before May 16)
+- 0G Compute testnet only offers Qwen 2.5 7B; mainnet has GLM-5 / DeepSeek V3.1
+- StorageScan UI detail pages sometimes display empty fields due to their downstream sync; use the indexer API directly for authoritative metadata
+- Not yet deployed to mainnet (Chain ID 16661) — planned before May 16
 
 ## About
 
 Built by [@0xSmallironman](https://x.com/0xSmallironman) for the [0G APAC Hackathon](https://www.hackquest.io/hackathons/0G-APAC-Hackathon) — Track 2: Agentic Trading Arena (Verifiable Finance).
 
-*5 years of cross-border payment infrastructure experience (FIX 4.4, SWIFT MT103, ISO 20022). "From SWIFT to Smart Contracts."*
+Positioning: *From SWIFT to Smart Contracts — cross-border payment risk decisions as public, verifiable chain artifacts.*
 
 ## License
 

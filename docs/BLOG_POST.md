@@ -1,224 +1,136 @@
-# From SWIFT to Smart Contracts: Building a Verifiable AI FX Risk Agent on 0G
+# From SWIFT to Smart Contracts: Building Verifiable AI Risk Infrastructure on 0G
 
-*How 5 years of cross-border payment experience shaped my submission to the 0G APAC Hackathon — and why "Verifiable AI" is the next frontier in financial compliance.*
+> What I learned building the first fully on-chain AI decision trail for cross-border payments — and why the "Memory as Asset" thesis actually works in production.
 
 ---
 
-## The Moment That Started It All
+## The Problem No One Talks About
 
-I've spent the last 5 years building cross-border payment infrastructure. FIX 4.4 protocol. SWIFT MT103 messages. ISO 20022 camt.052 reports. The kind of work where a misplaced decimal point costs millions.
+Cross-border payment companies process billions in FX transactions every day. Between the moment an order is placed and settlement completes — the T+0 to T+2 window — exchange rates move, sometimes violently. A three-pip drift on a ¥10M remittance is $23,000 of margin evaporated.
 
-In the past two years, AI started making more and more of our decisions. Risk scoring. Fraud detection. FX exposure analysis. But every time something went wrong — a channel returned an inverted currency pair (USD/ZAR=16 instead of ZAR/USD=0.06, a 260x error), a reference rate feed went down — the same question came up:
+Modern treasury desks deploy AI models to watch these windows. That part isn't new. What *is* new is the question I started asking after several years inside cross-border infrastructure:
 
-> **"What did the system know, when did it know it, and what did it decide?"**
+**When the audit team shows up six months later asking "what exactly did your AI know at 14:32:06 on the day everything went sideways?" — can you actually answer?**
 
-And every time, the answer was buried in a mix of logs, Slack messages, and retrospective guesses. There was no **unified, tamper-proof audit trail for AI decisions**.
+In almost every case today: **no**.
 
-This is the problem EU AI Act enforcement (August 2026) tries to solve with regulation. I wanted to solve it with architecture.
+The reasoning lives in conversation histories on OpenAI's servers. The recommendation is in a Slack message someone screenshotted. The confidence score is in a log file that rotated out 90 days ago. The prompt got patched three times since then. If the AI was wrong, you can't prove what it *believed* when it was wrong. If it was right, you can't prove it was the AI's doing and not a lucky guess.
 
-## Meet FX Risk Agent
+This is the audit problem that every AI-in-finance pitch glosses over. **"AI makes decisions"** and **"AI decisions are auditable"** are separated by a chasm, and the chasm is where compliance, trust, and capital allocation all fall in.
 
-Built in 3 days for the **[0G APAC Hackathon](https://www.hackquest.io/hackathons/0G-APAC-Hackathon)** — Track 2: Verifiable Finance.
+## What "Verifiable AI" Actually Means
 
-**Core idea**: An autonomous AI agent that monitors FX markets, makes risk judgments, and records **every single decision** on-chain, with full reasoning stored permanently on 0G Storage.
+The standard answer from Web3 is "put AI on-chain." That phrase usually means one of:
 
-```
-FX Market Data → AI Analysis → Decision Log (0G Storage)
-                                        ↓
-                          Risk Alert (0G Chain with rootHash)
-                                        ↓
-                          Agent State Update (INFT inferenceCount++)
-```
+1. **On-chain inference** — run the model itself inside a smart contract. Cute, doesn't scale, expensive on gas, and most useful models don't fit.
+2. **Oracle-fed outputs** — an off-chain AI computes, an oracle signs the result, the signed value lands on-chain. Better, but now you're trusting the oracle operator not to lie about what ran off-chain.
+3. **ZK-proven inference** — proves the computation was performed correctly. Elegant, but today's state of the art can prove small models at hobbyist scale.
 
-**The verification chain anyone can run**:
-1. Pull any `AlertCreated` event from 0G Chain
-2. Extract the `storageRootHash` field
-3. Download the full AI reasoning JSON from 0G Storage using that hash
-4. Verify the AI's judgment matches the market data at that moment
+None of these answer the real audit question. They prove the AI *did* something, not what the AI *thought*.
 
-No permission needed. No one can alter what's been written.
+The answer I converged on, after a weekend of whiteboarding:
 
-## Why 0G, Specifically?
+**Verifiability is not about the computation — it's about the provenance of the reasoning.**
 
-I evaluated Ethereum L2s, Solana, Polygon. Ended up on 0G for four reasons:
+You don't need to re-run the AI. You need to cryptographically commit to the *complete* decision artifact — the prompt, the model metadata, the reasoning chain, the confidence, the recommendation, the source data snapshot — at the moment the decision was made. And you need a way for any third party, months later, to retrieve that exact artifact and verify it hasn't been tampered with.
 
-| Need | 0G Component | What Traditional Chains Can't Do |
-|---|---|---|
-| Store full AI reasoning (JSON with 1-2KB per decision) | **0G Storage** | Ethereum calldata costs $50+ per KB. Unsustainable. |
-| Link on-chain events to off-chain logs | **0G Chain** (EVM) | Standard EVM, so my Solidity skills transfer directly |
-| AI-as-an-asset identity | **Agent ID (ERC-7857)** | No mature INFT standard on other chains |
-| Confidential inference | **0G Compute (TEE)** | No other chain has native Sealed Inference |
+That's the architecture FX Risk Agent is built around.
 
-0G is built for this exact use case — **"AI is a first-class citizen, not a bolt-on"**.
+## The Four 0G Components, Each Doing Exactly One Job
 
-## Architecture Walkthrough
+What took me a while to appreciate about 0G's stack is that it's the **first L1 where all four primitives you need for verifiable AI exist on the same chain**:
 
-### Layer 1: AI Inference (Dual Backend)
+### 1. 0G Storage — The Reasoning Archive
 
-The most interesting architectural choice was **dual AI backends**, toggleable via `.env`:
+Every time the agent runs, it produces a `DecisionLog` JSON containing:
+- Currency pair, spot rate, breach threshold
+- The complete AI reasoning (several paragraphs of natural language)
+- Recommendation, confidence score, risk level
+- Prompt/completion token usage
+- Model identity, AI backend, optional TEE verification receipt
+- Session ID, agent ID, timestamp
 
-```typescript
-// src/agent/llm/factory.ts
-export function createLLMBackend(): LLMBackend {
-  const kind = process.env.AI_BACKEND || "doubao";
-  if (kind === "0g-compute") return new ZgComputeBackend();
-  return new DoubaoBackend();
-}
-```
+This JSON is uploaded to 0G Storage. The upload produces a **rootHash** — a Merkle commitment to every byte of the decision. The rootHash is what gets recorded everywhere else.
 
-- **`doubao`**: ByteDance's Doubao Seed 2.0 Pro via OpenAI-compatible API. Fast, high-quality reasoning. Used for demo.
-- **`0g-compute`**: 0G Compute Network with TEE-backed inference. Every response is cryptographically signed inside a hardware enclave. This is what makes strategy-level confidentiality possible.
+This matters more than it sounds. The rootHash is the fingerprint of the *exact* AI reasoning at that exact moment. Change a comma in the reasoning field, the rootHash changes. Anyone retrieving the rootHash later gets back byte-for-byte what the AI actually produced.
 
-For the hackathon demo, I default to Doubao for quality. For production use cases where **front-running prevention** matters (trading strategy execution), switch to `0g-compute` and the entire inference pipeline becomes tamper-proof.
+### 2. 0G Chain — The Alert Registry
 
-### Layer 2: On-Chain Audit Trail (V1 + V2 Coexistence)
+On top of 0G Storage, I deployed `FXRiskOracleV2`, a Solidity contract that records every risk alert as an on-chain event. Each event carries:
+- Currency pair, risk level, spot rate, threshold
+- The Storage rootHash (linking back to the full reasoning)
+- The `agentTokenId` of the AI agent that produced the alert
+- The `aiBackend` identifier
 
-I deployed **two versions** of the oracle contract:
+Critically, `submitAlert` is access-controlled: only the owner of the agent's INFT can submit an alert attributed to that agent. This closes the most common impersonation vector — anyone can read the public contract, but only the legitimate Agent identity can write.
 
-- **V1** (`0x12030bc3...`): Simple alert registry. Kept for historical continuity.
-- **V2** (`0x2ddfe566...`): Adds `agentTokenId` and `aiBackend` fields per alert.
+### 3. 0G Compute — The Verifiable Inference Layer
 
-```solidity
-// contracts/FXRiskOracleV2.sol
-function submitAlert(
-    string calldata currencyPair,
-    RiskLevel level,
-    uint256 spotRate,
-    uint256 threshold,
-    bytes32 storageRootHash,
-    uint256 agentTokenId,      // ← NEW: links to Agent INFT
-    string calldata aiBackend   // ← NEW: "doubao" or "0g-compute"
-) external;
-```
+For the AI itself, I use a **dual-backend pattern**. Production path: 0G Compute (Qwen 2.5 7B running inside a TEE-attested provider, accessed through `@0glabs/0g-serving-broker`). Fallback path: Volcano Ark's Doubao model. Both return results into the same `LLMBackend` interface; the wrapper decides.
 
-**Design decision**: Why not use a proxy pattern to upgrade V1 in-place?
+When 0G Compute responds, the response includes a TEE attestation — the provider has cryptographically asserted the response was produced by the claimed model inside a secure enclave. That attestation gets embedded in the DecisionLog JSON that goes to 0G Storage. Anyone downloading the decision log can verify the TEE signature independently.
 
-Because the demo story is stronger with both contracts live. The frontend shows a unified timeline with V1 alerts gracefully labeled as "pre-Agent-ID" and V2 alerts carrying full Agent badges. It communicates **evolution**, not just features.
+When the TEE path fails, we silently fall back to Doubao and **record the fallback reason directly in the DecisionLog**. The on-chain `aiBackend` field tells you which backend actually produced the result. No ghosts in the machine.
 
-### Layer 3: Agent Identity (ERC-7857 INFT)
+### 4. Agent ID (INFT, ERC-7857 inspired) — The Accountable Entity
 
-This is where it gets interesting. The agent itself is an on-chain asset:
+Here's the piece that made the whole architecture click for me: **the AI agent is itself a tokenized, owned, accountable entity on-chain**.
 
-```solidity
-// contracts/FXRiskAgentINFT.sol
-function mintAgent(
-    address to,
-    string calldata agentName,
-    string calldata version,
-    string calldata modelType,
-    bytes32 storageRootHash    // points to full agent metadata JSON
-) external returns (uint256);
+`FXRiskAgentINFT` is an ERC-721 with a few extensions inspired by the ERC-7857 draft: every token has a `storageRootHash` pointing to the agent's metadata, a `creator`, a `createdAt`, and a mutating `inferenceCount`. Every time the agent runs, `updateAgentState()` bumps `inferenceCount` and updates the storageRootHash to a new session-summary artifact.
 
-function updateAgentState(
-    uint256 tokenId,
-    bytes32 newStorageRootHash
-) external;  // increments inferenceCount
-```
+Three consequences:
 
-Every session, the agent calls `updateAgentState()` with a session summary:
-- Which pairs were analyzed
-- Which backend was used
-- Which decision logs were generated
+- **The agent has a provable history.** Token #0 has done N inferences. Each inference's rootHash is discoverable via contract events.
+- **Ownership is transferable.** If I sell or transfer the INFT, the new owner inherits the agent's full audit trail — Memory *is* an asset.
+- **Access control has a clean root.** The Oracle's "who can submit on behalf of Agent #0?" question becomes `INFT.ownerOf(0) == msg.sender`. Lose the INFT, lose the ability to speak as that agent.
 
-The on-chain `inferenceCount` becomes a **verifiable performance counter**. Long-term, this enables:
-- **Reputation scoring** — "This agent has made 10,000 verified inferences with 95% accuracy"
-- **Marketplace economics** — INFTs can be transferred, licensed, monetized
-- **Regulatory clarity** — `getAgent(tokenId)` exposes model version, creator, metadata provenance
+Combined, the four components form a closed loop: **Storage holds the truth, Chain holds the pointers, Compute produces verifiable inference, and the INFT anchors accountability.**
 
-Think of it as the agent's **passport + resume + license plate**, all rolled into one.
+## The Dashboard That's Actually Decentralized
 
-### Layer 4: Verifiable Risk Cockpit (Frontend)
+Most Web3 dashboards are static HTML files that read from a backend API that reads from a centralized database. The "Web3" part is aesthetic.
 
-The dashboard is a single-file vanilla HTML + ethers.js app. No Node.js server, no build step. Deploys anywhere a static file server runs.
+FX Risk Agent's dashboard is a single static HTML page hosted on GitHub Pages. When you click "View AI Decision" on any alert, the browser **fetches the decision log JSON directly from 0G's storage indexer** — no backend, no middleman, no proxy. The bytes you see in the modal are the same bytes I uploaded days ago, served from 0G's decentralized storage network and verified by the same rootHash that's on-chain.
 
-Key design goal: **show the verification chain visually**. Every V2 alert displays:
-- Risk level badge (color-coded)
-- Agent #0 chip (links to Agent INFT)
-- Backend chip (`doubao` or `0g-compute`)
-- Storage rootHash (click to verify on StorageScan)
-- Chain tx link (click to verify on ChainScan)
+The **Download Original** button does the same thing, but gives you the raw JSON to keep. Anyone can run `curl https://indexer-storage-testnet-turbo.0g.ai/file?root=<hash>` and get the identical bytes. That's what "public, verifiable" looks like when it's not a marketing slogan.
 
-The audit trail becomes **interactive**. Regulators can click through in real time.
+I'll admit, getting here took some wrestling. When I started, I was writing local mirror files and pushing them to the repo on every agent run. It worked, but it wasn't really Web3 — the Dashboard was reading from GitHub, not from 0G. The moment I confirmed 0G's indexer serves `Access-Control-Allow-Origin: *`, I rewrote the Dashboard to fetch directly. The local mirror stays as a graceful fallback, but the primary path is pure decentralized retrieval.
 
-## Building With an AI Coding Agent
+## Security Architecture: The Boring-Looking Parts That Matter Most
 
-Here's the meta-story: **I built an AI agent with an AI coding assistant.**
+Two decisions that don't fit on a pitch slide but are the reason I'd trust this in production:
 
-I used [Claude Code](https://claude.com/claude-code) as my pair programmer for the entire build. For a solo builder competing against teams, this wasn't optional — it was the difference between shipping and not.
+**1. Trust boundaries are closed at both ends.** Minting an INFT agent requires `onlyOwner` on the NFT contract. Submitting an alert requires owning the INFT. Neither side is permissionless. An attacker who wants to forge an "official" AI alert has to either compromise the deployer key or compromise the INFT owner — there's no lateral path through the Oracle that was the obvious-in-hindsight attack vector most similar projects miss.
 
-A typical exchange looked like this:
+**2. State-mutating paths are reentrancy-guarded.** `mintAgent` and `updateAgentState` both inherit OpenZeppelin's `ReentrancyGuard`. `mintAgent` orders its state writes before the `_safeMint` external call so a malicious `ERC721Receiver` can't observe half-written metadata. These are small, boring decisions. They're also the difference between "safe smart contract" and "every testnet alarm going off when the real world shows up."
 
-> **Me**: "I need to integrate 0G Compute into the existing AI analyzer. Keep Doubao as default so demo quality doesn't regress. Design a clean strategy pattern."
->
-> **Claude Code**: *Creates `src/agent/llm/` with types.ts, doubaoBackend.ts, zgComputeBackend.ts, factory.ts. Refactors analyzer.ts to accept the backend as a parameter. Updates .env.example. Verifies TypeScript compiles.*
+## What's Live Right Now
 
-The 14-hour estimate for "integrate 0G Compute + Agent ID" collapsed to **3 hours of focused work** because:
-- Code generation was instant
-- SDK integration (reading `@0glabs/0g-serving-broker` type defs) was automated
-- Bug hunting happened through compile cycles, not manual reading
+- **FXRiskOracleV2**: `0x2abde2687923ffb9a5be4c6df3aac68a4f0a93ca`
+- **FXRiskAgentINFT**: `0xAA540f42f0d20588f183E3B92B3b617991fa22D1` — Token #0 active
+- **Live Dashboard**: [smallironman666.github.io/fx-risk-agent](https://smallironman666.github.io/fx-risk-agent/)
+- **GitHub**: [github.com/smallironman666/fx-risk-agent](https://github.com/smallironman666/fx-risk-agent)
 
-**Key insight**: AI coding agents don't replace architectural thinking — they accelerate the implementation layer. I still made every design decision. The AI filled in the code after I committed to a direction.
+Every alert on the dashboard is a real agent run. Every rootHash resolves to a real JSON on 0G Storage. Every `submitAlert` transaction is indexed on Chainscan. Verify independently, or take my word for it — but the whole point is that you don't have to take anyone's word.
 
-## Critical Design Decisions
+## The Honest Part
 
-### Why ERC-7857 (not ERC-721)?
+Is the "Memory as Asset" thesis the next Ethereum? I don't know. The AI-x-Web3 narrative is loud, and 0G is early. What I can say after two weeks inside the stack: **it's the only infrastructure I've tried where building verifiable AI for real financial decisions felt natural, not bolted-together.** Everything else I considered involved gluing IPFS to generic L2s with an off-chain signer in between. The chain primitives for this use case simply weren't there.
 
-ERC-7857 extends NFT with **encrypted metadata that can be re-encrypted on transfer**. For a financial agent whose system prompt + thresholds are valuable IP, this matters. ERC-721 would expose everything.
-
-### Why store every decision (including LOW risk)?
-
-At first I only stored HIGH/CRITICAL. Then I realized: **the absence of an alert is itself evidence**. If the AI judged "LOW" at 10:00 and the market crashed at 10:30, regulators need to see that LOW judgment — because it reveals whether the AI was wrong or the data was wrong.
-
-Audit trails that only log alarms are not audit trails. They're marketing.
-
-### Why preserve V1 alongside V2?
-
-Throwing away data is a red flag to auditors. "We lost our historical records during the upgrade" is not an acceptable answer. V1 stays, V2 adds, the system tells a continuous story.
-
-## What I Learned
-
-1. **Verifiable ≠ Transparent ≠ Public**. These are three different properties. Verifiable AI needs cryptographic proof that the output came from the claimed input through a specific model version. It doesn't need the inputs/outputs to be public (that's privacy). It doesn't need humans to read everything (that's transparency).
-
-2. **The hardest part wasn't code**. It was deciding which 0G components to integrate (Storage/Chain — obvious; Compute — yes, dual-mode; Agent ID — yes; Privacy/TEE — no, wrong fit for audit use case). Every "yes" is a commitment. Every "no" is a focused scope.
-
-3. **"Financial AI" and "trading AI" need opposite properties**. Financial compliance needs transparency and auditability. Trading strategy needs confidentiality. I chose compliance. That choice shaped everything downstream.
-
-4. **Infrastructure tokens are a real bottleneck**. 0G Compute requires 3+ OG to fund the broker ledger. Galileo faucet gives 0.1/day. That's a 30-day wait for a tool that takes 3 hours to integrate. Real-world hackathon friction.
+Whether that makes 0G a 10x asset-of-the-cycle is a market question I can't answer. Whether it makes 0G the most obvious place to ship a production-grade verifiable AI agent today is an engineering question, and my answer is yes.
 
 ## What's Next
 
-- **Mainnet migration** before final submission (May 16, 2026)
-- **Real FX data source** (Alpha Vantage or Twelve Data) replacing simulator
-- **TEE Sealed Inference** on mainnet for strategy confidentiality
-- **Multi-agent collaboration** — per-corridor agents (USD/CNY, EUR/USD, etc.)
-- **Dashboard v2** — Agent passport redesign, real-time inference streaming
+- **Mainnet migration** on 0G Aristotle (Chain ID 16661) — waiting on testnet graduation of our current agent state.
+- **INFT metadata URI** so wallets and explorers can render Agent #0 with its full provenance inline.
+- **Historical Replay Mode** — a "what did the agent think the week before the crisis" demo that walks through a real timeline of archived decisions.
 
-## Final Thoughts
-
-Financial regulators are about to demand what AI providers can't currently deliver: **provable evidence of what an AI did, when, and why**. The EU AI Act in August 2026 is just the starting gun.
-
-Chains like 0G — designed specifically for AI, not retrofitted from generic L1s — are positioned to be the substrate for this new compliance layer. Not because blockchains are magical, but because:
-
-1. Cryptographic immutability is cheaper than legal attestation
-2. Public verifiability beats trusted third parties for cross-border disputes
-3. Tokenized AI identity (INFTs) creates accountability without centralized registries
-
-The gap between "AI makes decisions" and "AI decisions are auditable" is vast. Projects like FX Risk Agent are a concrete step into that gap.
+If you're building at the intersection of cross-border finance, agent ownership, or verifiable AI — reach out. This is a small room right now, and that's precisely why it matters.
 
 ---
 
-## Try It Yourself
+**FX Risk Agent** — verifiable AI risk monitoring for cross-border payments.
+Built on 0G. Solo-shipped. Production-minded.
 
-🐙 **GitHub**: [github.com/smallironman666/fx-risk-agent](https://github.com/smallironman666/fx-risk-agent)
-📹 **Demo Video**: [youtu.be/j2eaoJN18a8](https://youtu.be/j2eaoJN18a8)
-📊 **Live Dashboard**: [fx.0xsmall.com](http://fx.0xsmall.com)
-
-**On-chain verification**:
-- FXRiskOracleV2: [`0x2abde2687923ffb9a5be4c6df3aac68a4f0a93ca`](https://chainscan-galileo.0g.ai/address/0x2abde2687923ffb9a5be4c6df3aac68a4f0a93ca)
-- Agent INFT: [`0xAA540f42f0d20588f183E3B92B3b617991fa22D1`](https://chainscan-galileo.0g.ai/address/0xAA540f42f0d20588f183E3B92B3b617991fa22D1)
-
----
-
-*Built by [@0xSmallironman](https://x.com/0xSmallironman) for the 0G APAC Hackathon. 5 years of cross-border payment infrastructure experience (FIX 4.4, SWIFT MT103, ISO 20022). Currently exploring AI × Web3 at the intersection of compliance and verifiable computation.*
-
-*If you're building at this intersection or hiring for it, [DM me on X](https://x.com/0xSmallironman).*
+🔗 [Dashboard](https://smallironman666.github.io/fx-risk-agent/) · [GitHub](https://github.com/smallironman666/fx-risk-agent) · [Demo](https://youtu.be/j2eaoJN18a8)
+🐦 [@0xSmallironman](https://x.com/0xSmallironman)
