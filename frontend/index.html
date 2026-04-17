@@ -95,6 +95,49 @@
     .badge-CRITICAL { background: rgba(239,68,68,.15); color: var(--red); }
     .badge-NONE { background: rgba(107,114,128,.15); color: var(--muted); }
 
+    /* ===== Data Source Chip (lazy-loaded from DecisionLog on 0G Storage) ===== */
+    .datasource-chip {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 1px 7px; margin-left: 6px;
+      border-radius: 3px;
+      font-size: 10px; font-weight: 700; letter-spacing: .4px;
+      border: 1px solid transparent;
+      cursor: help;
+    }
+    .datasource-chip::before {
+      content: ""; width: 6px; height: 6px; border-radius: 50%; display: inline-block;
+    }
+    .datasource-chip.ds-live::before { background: var(--green); box-shadow: 0 0 6px rgba(34,197,94,.6); }
+    .datasource-chip.ds-cache::before { background: var(--yellow); }
+    .datasource-chip.ds-sim::before { background: var(--muted); }
+    .datasource-chip.ds-live {
+      background: rgba(34,197,94,.10);
+      color: var(--green);
+      border-color: rgba(34,197,94,.3);
+    }
+    .datasource-chip.ds-cache {
+      background: rgba(234,179,8,.10);
+      color: var(--yellow);
+      border-color: rgba(234,179,8,.3);
+    }
+    .datasource-chip.ds-sim {
+      background: rgba(107,114,128,.10);
+      color: var(--muted);
+      border-color: rgba(107,114,128,.3);
+    }
+    .datasource-chip-skeleton {
+      display: inline-block; width: 72px; height: 16px; margin-left: 6px;
+      background: linear-gradient(90deg, rgba(107,114,128,.1), rgba(107,114,128,.2), rgba(107,114,128,.1));
+      background-size: 200% 100%;
+      animation: dsShimmer 1.4s infinite;
+      border-radius: 3px;
+      vertical-align: middle;
+    }
+    @keyframes dsShimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
     /* ===== Center ===== */
     .center { padding: 20px; overflow-y: auto; }
     .section-title {
@@ -1009,6 +1052,11 @@ function buildTimelineItem(a) {
       left.appendChild(legacyChip);
     }
 
+    // 懒加载数据源徽章：异步从 0G Storage 拉 DecisionLog 再显示
+    if (a.storageRootHash) {
+      attachDataSourceBadge(left, a.storageRootHash);
+    }
+
     header.appendChild(left);
     header.appendChild(el("span", "tl-time", ftime(a.timestamp)));
     card.appendChild(header);
@@ -1449,6 +1497,94 @@ function modalHashBox(text) {
 
 var OG_INDEXER = "https://indexer-storage-testnet-turbo.0g.ai";
 
+// DecisionLog 缓存：rootHash -> 完整 JSON，供 Modal + 卡片徽章共用，避免重复拉
+var decisionLogCache = new Map();
+var decisionLogInflight = new Map(); // 同一 rootHash 的并发请求去重
+
+async function fetchDecisionLog(rootHash) {
+  if (decisionLogCache.has(rootHash)) return decisionLogCache.get(rootHash);
+  if (decisionLogInflight.has(rootHash)) return decisionLogInflight.get(rootHash);
+
+  var task = (async function () {
+    try {
+      // L1：去中心化，从 0G Storage indexer 拉
+      var res = await fetch(OG_INDEXER + "/file?root=" + rootHash);
+      if (!res.ok) throw new Error("indexer HTTP " + res.status);
+      var log = await res.json();
+      decisionLogCache.set(rootHash, log);
+      return log;
+    } catch (primaryErr) {
+      // L2：本地 mirror 兜底
+      try {
+        var mirrorRes = await fetch("./data/" + rootHash + ".json");
+        if (!mirrorRes.ok) throw new Error("mirror HTTP " + mirrorRes.status);
+        var log = await mirrorRes.json();
+        decisionLogCache.set(rootHash, log);
+        return log;
+      } catch (fallbackErr) {
+        return null; // 两条都失败 → 前端静默
+      }
+    } finally {
+      decisionLogInflight.delete(rootHash);
+    }
+  })();
+  decisionLogInflight.set(rootHash, task);
+  return task;
+}
+
+/**
+ * 根据 DecisionLog 的 quotes[0].source 字段推断数据源徽章
+ * REAL_FAWAZAHMED0 → fawazahmed0 CDN（L1 主源）
+ * REAL_FRANKFURTER → Frankfurter/ECB（L2 备源）
+ * REAL_LOCAL-CACHE → 本地缓存（L3 保底）
+ * FX_SIMULATOR     → 压力测试模拟数据
+ */
+function inferDataSourceBadge(log) {
+  if (!log || !log.assessment || !log.assessment.quotes || log.assessment.quotes.length === 0) {
+    return null;
+  }
+  var src = String(log.assessment.quotes[0].source || "");
+  if (src.indexOf("REAL_FAWAZAHMED0") === 0) {
+    return { label: "LIVE · fawazahmed0", cls: "ds-live",
+      title: "L1 · Real FX data from fawazahmed0 jsDelivr CDN" };
+  }
+  if (src.indexOf("REAL_FRANKFURTER") === 0) {
+    return { label: "LIVE · ECB", cls: "ds-live",
+      title: "L2 fallback · Real FX data from Frankfurter / ECB" };
+  }
+  if (src.indexOf("REAL_LOCAL-CACHE") === 0) {
+    return { label: "LIVE · cached", cls: "ds-cache",
+      title: "L3 fallback · Using last successfully fetched real FX data" };
+  }
+  if (src === "FX_SIMULATOR") {
+    return { label: "SIMULATED", cls: "ds-sim",
+      title: "Stress-test simulated data (not real market)" };
+  }
+  return null;
+}
+
+/**
+ * 给已渲染的 timeline 卡片挂载数据源徽章
+ * 实现：先插一个 skeleton 占位 → 异步拉 DecisionLog → 替换成真实徽章
+ */
+function attachDataSourceBadge(leftContainer, rootHash) {
+  if (!leftContainer || !rootHash) return;
+  var placeholder = el("span", "datasource-chip-skeleton");
+  placeholder.setAttribute("data-ds-placeholder", rootHash);
+  leftContainer.appendChild(placeholder);
+
+  fetchDecisionLog(rootHash).then(function (log) {
+    var badge = inferDataSourceBadge(log);
+    if (!badge) {
+      placeholder.remove();
+      return;
+    }
+    var chip = el("span", "datasource-chip " + badge.cls, badge.label);
+    chip.title = badge.title;
+    leftContainer.replaceChild(chip, placeholder);
+  });
+}
+
 async function openDecisionModal(rootHash) {
   var modal = document.getElementById("decision-modal");
   var body = document.getElementById("modal-body");
@@ -1462,30 +1598,28 @@ async function openDecisionModal(rootHash) {
   document.getElementById("modal-indexer-link").href = OG_INDEXER + "/file/info/" + rootHash;
   document.getElementById("modal-raw-link").href = OG_INDEXER + "/file?root=" + rootHash;
 
-  try {
-    // 优先从 0G indexer 实时拉取（去中心化、最权威）
-    var res = await fetch(OG_INDEXER + "/file?root=" + rootHash);
-    if (!res.ok) throw new Error("0G indexer HTTP " + res.status);
-    renderDecisionModal(await res.json(), rootHash, "0g-storage");
-  } catch (primaryErr) {
-    // Fallback: 本地 mirror
-    try {
-      var mirrorRes = await fetch("./data/" + rootHash + ".json");
-      if (!mirrorRes.ok) throw new Error("mirror HTTP " + mirrorRes.status);
-      renderDecisionModal(await mirrorRes.json(), rootHash, "local-mirror");
-    } catch (fallbackErr) {
-      body.replaceChildren();
-      body.appendChild(modalVerifyBox(
-        "Could not load decision log from 0G Storage or local mirror. " +
-        "The data is on-chain — click \"Download Original\" to fetch it directly.", "error"
-      ));
-      var rhWrap = el("div", "modal-section");
-      rhWrap.style.marginTop = "16px";
-      var rhTitle = el("div", "modal-section-title"); rhTitle.textContent = "Root Hash";
-      rhWrap.appendChild(rhTitle);
-      rhWrap.appendChild(modalHashBox(rootHash));
-      body.appendChild(rhWrap);
-    }
+  // 优先用缓存（timeline 已经预拉过）；否则走 fetchDecisionLog 的 L1/L2 fallback
+  var cached = decisionLogCache.get(rootHash);
+  if (cached) {
+    renderDecisionModal(cached, rootHash, "0g-storage");
+    return;
+  }
+
+  var log = await fetchDecisionLog(rootHash);
+  if (log) {
+    renderDecisionModal(log, rootHash, "0g-storage");
+  } else {
+    body.replaceChildren();
+    body.appendChild(modalVerifyBox(
+      "Could not load decision log from 0G Storage or local mirror. " +
+      "The data is on-chain — click \"Download Original\" to fetch it directly.", "error"
+    ));
+    var rhWrap = el("div", "modal-section");
+    rhWrap.style.marginTop = "16px";
+    var rhTitle = el("div", "modal-section-title"); rhTitle.textContent = "Root Hash";
+    rhWrap.appendChild(rhTitle);
+    rhWrap.appendChild(modalHashBox(rootHash));
+    body.appendChild(rhWrap);
   }
 }
 
@@ -1507,9 +1641,11 @@ function renderDecisionModal(d, rootHash, source) {
   if (a.reasoning) body.appendChild(modalSection("AI Reasoning", modalTextBox(a.reasoning)));
   if (a.recommendation) body.appendChild(modalSection("Recommendation", modalTextBox(a.recommendation)));
 
+  var fxSource = (a.quotes && a.quotes[0] && a.quotes[0].source) || "-";
   body.appendChild(modalSection("Model & Backend", modalGrid([
     modalChip("Model Used", d.modelUsed),
     modalChip("AI Backend", d.aiBackend),
+    modalChip("FX Data Source", fxSource),
     modalChip("Prompt Tokens", d.promptTokens || 0),
     modalChip("Completion Tokens", d.completionTokens || 0)
   ])));
