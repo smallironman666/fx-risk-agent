@@ -152,6 +152,68 @@
     .badge-CRITICAL { background: rgba(239,68,68,.15); color: var(--red); }
     .badge-NONE { background: rgba(107,114,128,.15); color: var(--muted); }
 
+    /* ===== Historical Replay Controls ===== */
+    .replay-control {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin-bottom: 16px;
+    }
+    .replay-header {
+      display: flex; justify-content: space-between; align-items: baseline;
+      margin-bottom: 10px;
+    }
+    .replay-label {
+      font-size: 10px; color: var(--muted); font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+    }
+    .replay-time {
+      font-size: 13px; font-weight: 600; color: var(--text);
+      letter-spacing: -0.01em;
+    }
+    .replay-slider {
+      width: 100%;
+      height: 4px;
+      -webkit-appearance: none; appearance: none;
+      background: var(--border);
+      border-radius: 2px;
+      outline: none;
+      cursor: pointer;
+    }
+    .replay-slider::-webkit-slider-thumb {
+      -webkit-appearance: none; appearance: none;
+      width: 14px; height: 14px; border-radius: 50%;
+      background: var(--purple-bright);
+      border: 2px solid var(--bg);
+      cursor: grab;
+      transition: transform .1s;
+    }
+    .replay-slider::-webkit-slider-thumb:active { cursor: grabbing; transform: scale(1.15); }
+    .replay-slider::-moz-range-thumb {
+      width: 14px; height: 14px; border-radius: 50%;
+      background: var(--purple-bright); border: 2px solid var(--bg);
+      cursor: grab;
+    }
+    .replay-footnote {
+      display: flex; justify-content: space-between;
+      margin-top: 8px;
+      font-size: 10px; color: var(--muted);
+      letter-spacing: 0.04em;
+    }
+    .replay-reset {
+      font-size: 10px; font-weight: 600; letter-spacing: 0.08em;
+      padding: 2px 10px;
+      background: rgba(183,95,255,.10);
+      color: var(--purple-bright);
+      border: 1px solid rgba(183,95,255,.3);
+      border-radius: 3px;
+      cursor: pointer;
+      text-transform: uppercase;
+      transition: background .15s;
+    }
+    .replay-reset:hover { background: rgba(183,95,255,.2); }
+
     /* ===== Data Source Chip (lazy-loaded from DecisionLog on 0G Storage) ===== */
     .datasource-chip {
       position: relative;
@@ -798,7 +860,24 @@
       <div class="stat"><div class="sl">Last Update</div><div class="sv" style="font-size:14px" id="statTime">-</div></div>
     </div>
 
-    <div class="section-title">Verifiable Audit Trail</div>
+    <div class="section-title" style="display:flex;align-items:center;justify-content:space-between">
+      <span>Verifiable Audit Trail</span>
+      <button id="replayReset" class="replay-reset" title="Jump to latest" style="display:none">↻ Live</button>
+    </div>
+
+    <!-- Historical Replay: 拖动滑块回放 Agent 历史视角（合规场景：监管问"那一刻 Agent 掌握了什么"）-->
+    <div id="replayControl" class="replay-control" style="display:none">
+      <div class="replay-header">
+        <span class="replay-label">Time Machine</span>
+        <span class="replay-time mono" id="replayTimeLabel">—</span>
+      </div>
+      <input type="range" id="replaySlider" class="replay-slider" min="0" max="100" value="100" />
+      <div class="replay-footnote">
+        <span id="replayCountLabel">Showing all alerts</span>
+        <span class="replay-hint">Drag to replay Agent's view at any point in time</span>
+      </div>
+    </div>
+
     <div id="auditTimeline" class="timeline">
       <div class="empty-state">Loading from 0G Chain...</div>
     </div>
@@ -1043,6 +1122,64 @@ function renderPairCards(alerts) {
 
 function filterTimeline(pair) {
   renderTimeline(pair ? alertsData.filter(function(a) { return a.currencyPair === pair; }) : alertsData);
+}
+
+/**
+ * Historical Replay 基础版
+ * Slider 代表时间轴（0=最早告警, 100=最新），拖动即按时间戳过滤
+ * 合规叙事："监管问'4/16 18:22 那一刻 Agent 掌握了什么'，拖到那里就给答案"
+ */
+function setupHistoricalReplay(alerts) {
+  var control = document.getElementById("replayControl");
+  var slider = document.getElementById("replaySlider");
+  var timeLabel = document.getElementById("replayTimeLabel");
+  var countLabel = document.getElementById("replayCountLabel");
+  var resetBtn = document.getElementById("replayReset");
+
+  if (!control || !slider || !alerts || alerts.length < 2) {
+    if (control) control.style.display = "none";
+    return;
+  }
+
+  // 按时间排序（旧→新），供 slider 索引
+  var sorted = alerts.slice().sort(function(a, b) { return Number(a.timestamp) - Number(b.timestamp); });
+  var minTs = Number(sorted[0].timestamp);
+  var maxTs = Number(sorted[sorted.length - 1].timestamp);
+
+  control.style.display = "block";
+  slider.min = "0";
+  slider.max = "1000"; // 1000 段保证拖动精度
+  slider.value = "1000"; // 默认最新
+
+  function applyReplay(sliderVal) {
+    var ratio = sliderVal / 1000;
+    var cutoffTs = minTs + (maxTs - minTs) * ratio;
+    var visible = alerts.filter(function(a) { return Number(a.timestamp) <= cutoffTs; });
+
+    renderTimeline(visible);
+
+    // Label 更新
+    if (ratio >= 1.0) {
+      timeLabel.textContent = "Live — " + ftime(maxTs);
+      timeLabel.style.color = "var(--green)";
+      countLabel.textContent = "Showing all " + alerts.length + " alerts";
+      resetBtn.style.display = "none";
+    } else {
+      timeLabel.textContent = "Rewound to " + ftime(cutoffTs);
+      timeLabel.style.color = "var(--purple-bright)";
+      countLabel.textContent = "Agent's view at that moment: " + visible.length + " of " + alerts.length + " alerts";
+      resetBtn.style.display = "inline-block";
+    }
+  }
+
+  slider.addEventListener("input", function() { applyReplay(Number(this.value)); });
+  resetBtn.addEventListener("click", function() {
+    slider.value = "1000";
+    applyReplay(1000);
+  });
+
+  // 初始化 label
+  applyReplay(1000);
 }
 
 function renderTimeline(alerts) {
@@ -1411,6 +1548,9 @@ async function loadDashboard() {
     renderAgentCard(agentInfo);
     renderPairCards(alertsData);
     renderTimeline(alertsData);
+
+    // Historical Replay：告警 ≥ 2 条才启用（1 条无"回放"意义）
+    setupHistoricalReplay(alertsData);
 
   } catch (err) {
     var tl = document.getElementById("auditTimeline");
