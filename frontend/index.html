@@ -6,23 +6,55 @@
   <title>FX Risk Agent — Verifiable Risk Cockpit</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Major+Mono+Display&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Geist Mono: 0G 官方 brandkit 指定的等宽字体；保留 JetBrains Mono / Major Mono Display 作为 fallback -->
+  <link href="https://fonts.googleapis.com/css2?family=Major+Mono+Display&family=JetBrains+Mono:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.1/dist/ethers.umd.min.js"></script>
   <style>
     :root {
+      /* ===== Base neutral palette (aligned with 0G brandkit: black/white/gray base) ===== */
       --bg: #0a0c10; --surface: #13161e; --card: #1a1e2a;
       --border: #252a3a; --text: #e4e7ef; --muted: #6b7280;
+
+      /* ===== Risk level semantic colors (unchanged) ===== */
       --green: #22c55e; --yellow: #eab308; --orange: #f97316; --red: #ef4444;
-      --blue: #3b82f6; --purple: #8b5cf6; --cyan: #06b6d4;
+      --blue: #3b82f6; --cyan: #06b6d4;
+
+      /* ===== 0G brand purple system (0g.ai/brandkit) =====
+         Primary #9200E1 is the core brand color; use --purple-bright for accents/glow
+         on dark backgrounds to maintain contrast. */
+      --purple: #9200E1;
+      --purple-bright: #B75FFF;
+      --purple-soft: #CB8AFF;
+      --purple-pale: #E3C1FF;
+      --purple-glow: rgba(183, 95, 255, .35);
+
+      /* ===== Typography ===== */
       --display: 'Major Mono Display', 'SF Mono', monospace;
-      --tech: 'JetBrains Mono', 'SF Mono', monospace;
+      --tech: 'Geist Mono', 'JetBrains Mono', 'SF Mono', monospace;
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: -apple-system, 'Segoe UI', sans-serif;
       background: var(--bg); color: var(--text);
       min-height: 100vh;
+      position: relative;
     }
+    /* 0G signature motif: dotted gradient background
+       仅在 body::before 上作为装饰层，pointer-events:none 不干扰交互 */
+    body::before {
+      content: "";
+      position: fixed; inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      background-image:
+        radial-gradient(circle at 1px 1px, rgba(183,95,255,.08) 1px, transparent 1px),
+        radial-gradient(ellipse 1200px 600px at 20% -10%, rgba(146,0,225,.12), transparent 60%),
+        radial-gradient(ellipse 800px 400px at 90% 110%, rgba(183,95,255,.08), transparent 60%);
+      background-size: 24px 24px, auto, auto;
+      opacity: .9;
+    }
+    /* 保证所有实体内容叠在装饰层之上 */
+    .brand-band, .topbar, .main, .modal-backdrop { position: relative; z-index: 1; }
     code, .mono { font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace; }
 
     /* ===== Top Status Bar ===== */
@@ -35,7 +67,64 @@
       overflow-x: auto;
     }
     .topbar .logo { font-weight: 700; font-size: 15px; white-space: nowrap; }
-    .topbar .logo span { color: var(--blue); }
+    .topbar .logo span {
+      background: linear-gradient(90deg, var(--purple-bright), var(--purple-soft));
+      -webkit-background-clip: text; background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    /* ===== Brand Band: Powered by 0G ===== */
+    .brand-band {
+      position: relative;
+      display: flex; align-items: center; justify-content: center;
+      gap: 12px;
+      padding: 8px 24px;
+      background:
+        radial-gradient(circle at 20% 50%, rgba(146,0,225,.35), transparent 60%),
+        radial-gradient(circle at 80% 50%, rgba(183,95,255,.25), transparent 60%),
+        linear-gradient(90deg, #0d0a1a, #150628, #0d0a1a);
+      border-bottom: 1px solid rgba(183,95,255,.2);
+      font-family: var(--tech);
+      font-size: 11px;
+      letter-spacing: 2px;
+      color: var(--purple-soft);
+      overflow: hidden;
+    }
+    .brand-band::before {
+      content: "";
+      position: absolute; inset: 0;
+      background-image: radial-gradient(circle at 1px 1px, rgba(183,95,255,.18) 1px, transparent 1px);
+      background-size: 14px 14px;
+      opacity: .6;
+      pointer-events: none;
+    }
+    .brand-band .brand-og {
+      font-family: var(--display);
+      font-size: 15px;
+      color: var(--purple-bright);
+      text-shadow: 0 0 8px var(--purple-glow);
+      letter-spacing: 0;
+    }
+    .brand-band .brand-text {
+      position: relative; z-index: 1;
+      text-transform: uppercase;
+    }
+    .brand-band .brand-text b {
+      color: var(--text);
+      font-weight: 600;
+    }
+    .brand-band .brand-link {
+      position: relative; z-index: 1;
+      color: var(--purple-soft);
+      text-decoration: none;
+      border-bottom: 1px dashed rgba(203,138,255,.4);
+      padding-bottom: 1px;
+      transition: color .15s, border-color .15s;
+    }
+    .brand-band .brand-link:hover {
+      color: var(--purple-pale);
+      border-bottom-color: var(--purple-pale);
+    }
     .topbar .sep { width: 1px; height: 20px; background: var(--border); flex-shrink: 0; }
     .topbar .item { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
     .topbar .label { color: var(--muted); }
@@ -68,9 +157,9 @@
       transition: border-color .2s, transform .15s, box-shadow .2s;
     }
     .pair-card:hover {
-      border-color: rgba(139,92,246,.4);
+      border-color: rgba(183,95,255,.4);
       transform: translateY(-1px);
-      box-shadow: 0 4px 16px rgba(0,0,0,.25), 0 0 0 1px rgba(139,92,246,.15);
+      box-shadow: 0 4px 16px rgba(0,0,0,.25), 0 0 0 1px rgba(183,95,255,.15);
     }
     .pair-card.active {
       border-color: var(--cyan);
@@ -258,12 +347,12 @@
       margin-bottom: 20px;
       border-radius: 12px;
       background:
-        linear-gradient(180deg, rgba(139,92,246,.08) 0%, rgba(6,182,212,.02) 100%),
+        linear-gradient(180deg, rgba(183,95,255,.08) 0%, rgba(6,182,212,.02) 100%),
         var(--card);
-      border: 1px solid rgba(139,92,246,.25);
+      border: 1px solid rgba(183,95,255,.25);
       overflow: hidden;
       box-shadow:
-        0 0 24px rgba(139,92,246,.08),
+        0 0 24px rgba(183,95,255,.08),
         inset 0 1px 0 rgba(255,255,255,.03);
     }
 
@@ -274,7 +363,7 @@
       background-image: repeating-linear-gradient(
         0deg,
         transparent 0, transparent 2px,
-        rgba(139,92,246,.025) 2px, rgba(139,92,246,.025) 3px
+        rgba(183,95,255,.025) 2px, rgba(183,95,255,.025) 3px
       );
       pointer-events: none;
       opacity: 0.6;
@@ -293,11 +382,11 @@
       width: 52px; height: 52px;
       border-radius: 8px;
       background: linear-gradient(135deg, #1a1e2a 0%, #252a3a 100%);
-      border: 1px solid rgba(139,92,246,.3);
+      border: 1px solid rgba(183,95,255,.3);
       display: flex; align-items: center; justify-content: center;
       flex-shrink: 0;
       overflow: hidden;
-      box-shadow: 0 4px 12px rgba(0,0,0,.3), inset 0 0 8px rgba(139,92,246,.08);
+      box-shadow: 0 4px 12px rgba(0,0,0,.3), inset 0 0 8px rgba(183,95,255,.08);
     }
     .sigil svg { width: 100%; height: 100%; display: block; }
 
@@ -313,7 +402,7 @@
     }
     .passport-label::after {
       content: ''; flex: 1; height: 1px;
-      background: linear-gradient(90deg, rgba(139,92,246,.3), transparent);
+      background: linear-gradient(90deg, rgba(183,95,255,.3), transparent);
     }
     .passport-tokenid {
       font-family: var(--display);
@@ -391,7 +480,7 @@
     }
     .meter-bar {
       height: 4px;
-      background: rgba(139,92,246,.12);
+      background: rgba(183,95,255,.12);
       border-radius: 2px;
       overflow: hidden;
       position: relative;
@@ -464,7 +553,7 @@
     }
     .tl-card.v2 {
       background:
-        linear-gradient(90deg, rgba(139,92,246,.04) 0%, transparent 40%),
+        linear-gradient(90deg, rgba(183,95,255,.04) 0%, transparent 40%),
         var(--card);
       border-left: 2px solid transparent;
       padding-left: 14px;
@@ -492,8 +581,8 @@
       gap: 5px;
       padding: 2px 9px 2px 4px;
       border-radius: 999px;
-      background: linear-gradient(90deg, rgba(139,92,246,.18), rgba(139,92,246,.08));
-      border: 1px solid rgba(139,92,246,.35);
+      background: linear-gradient(90deg, rgba(183,95,255,.18), rgba(183,95,255,.08));
+      border: 1px solid rgba(183,95,255,.35);
       font-family: var(--tech);
       font-size: 10px;
       color: #c7b9fb;
@@ -502,15 +591,15 @@
       transition: all .15s;
     }
     .agent-chip:hover {
-      background: linear-gradient(90deg, rgba(139,92,246,.28), rgba(139,92,246,.15));
+      background: linear-gradient(90deg, rgba(183,95,255,.28), rgba(183,95,255,.15));
       transform: translateY(-1px);
-      box-shadow: 0 2px 8px rgba(139,92,246,.2);
+      box-shadow: 0 2px 8px rgba(183,95,255,.2);
     }
     .agent-chip-dot {
       width: 10px; height: 10px;
       border-radius: 50%;
       background: linear-gradient(135deg, var(--purple), var(--cyan));
-      box-shadow: 0 0 4px rgba(139,92,246,.6);
+      box-shadow: 0 0 4px rgba(183,95,255,.6);
       flex-shrink: 0;
     }
 
@@ -606,7 +695,9 @@
     }
     .modal-title .badge {
       font-size: 10px; padding: 2px 8px; border-radius: 3px;
-      background: var(--blue); color: #fff; font-weight: 500;
+      background: linear-gradient(135deg, var(--purple), var(--purple-bright));
+      color: #fff; font-weight: 500;
+      box-shadow: 0 0 8px var(--purple-glow);
     }
     .modal-close {
       background: none; border: none; color: var(--muted);
@@ -662,10 +753,25 @@
       background: var(--surface); color: var(--text);
       border: 1px solid var(--border);
     }
-    .modal-btn.primary { background: var(--blue); color: #fff; border-color: var(--blue); }
+    .modal-btn.primary {
+      background: linear-gradient(135deg, var(--purple), var(--purple-bright));
+      color: #fff; border-color: var(--purple);
+      box-shadow: 0 0 0 1px rgba(183,95,255,.15), 0 2px 8px rgba(146,0,225,.3);
+    }
+    .modal-btn.primary:hover {
+      background: linear-gradient(135deg, var(--purple-bright), var(--purple));
+      box-shadow: 0 0 0 1px rgba(183,95,255,.3), 0 4px 14px rgba(146,0,225,.5);
+    }
   </style>
 </head>
 <body>
+
+<!-- ===== Brand Band: Powered by 0G ===== -->
+<div class="brand-band">
+  <span class="brand-og">Ø</span>
+  <span class="brand-text">Built on <b>0G</b> · Decentralized AI Operating System</span>
+  <a class="brand-link" href="https://0g.ai" target="_blank" rel="noopener">0g.ai &rsaquo;</a>
+</div>
 
 <!-- ===== Top Status Bar ===== -->
 <div class="topbar">
@@ -1377,11 +1483,11 @@ function generateSigil(tokenId) {
     '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">' +
       '<defs>' +
         '<linearGradient id="sgrad' + tid + '" x1="0%" y1="0%" x2="100%" y2="100%">' +
-          '<stop offset="0%" stop-color="#8b5cf6"/>' +
+          '<stop offset="0%" stop-color="#B75FFF"/>' +
           '<stop offset="100%" stop-color="#06b6d4"/>' +
         '</linearGradient>' +
         '<radialGradient id="srad' + tid + '" cx="50%" cy="50%" r="50%">' +
-          '<stop offset="0%" stop-color="rgba(139,92,246,0.3)"/>' +
+          '<stop offset="0%" stop-color="rgba(183,95,255,0.3)"/>' +
           '<stop offset="100%" stop-color="rgba(6,182,212,0)"/>' +
         '</radialGradient>' +
       '</defs>' +
@@ -1392,7 +1498,7 @@ function generateSigil(tokenId) {
       // 外圈虚线环（旋转）
       '<circle cx="24" cy="24" r="20" stroke="url(#sgrad' + tid + ')" stroke-width="1" fill="none" stroke-dasharray="3 3" opacity="0.4" transform="rotate(' + angle + ' 24 24)"/>' +
       // 中圈
-      '<circle cx="24" cy="24" r="14" stroke="#8b5cf6" stroke-width="1" fill="none" stroke-dasharray="5 2" opacity="0.7" transform="rotate(' + (-angle) + ' 24 24)"/>' +
+      '<circle cx="24" cy="24" r="14" stroke="#B75FFF" stroke-width="1" fill="none" stroke-dasharray="5 2" opacity="0.7" transform="rotate(' + (-angle) + ' 24 24)"/>' +
       // 内实心
       '<circle cx="24" cy="24" r="9" fill="url(#sgrad' + tid + ')" opacity="0.9"/>' +
       // 中心点
