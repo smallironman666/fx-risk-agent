@@ -214,6 +214,136 @@
     }
     .replay-reset:hover { background: rgba(183,95,255,.2); }
 
+    /* Play 控件行 */
+    .replay-playrow {
+      display: flex; align-items: center; gap: 10px;
+    }
+    .replay-play {
+      flex-shrink: 0;
+      width: 28px; height: 28px; border-radius: 50%;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      font-size: 11px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background .15s, border-color .15s;
+    }
+    .replay-play:hover { background: rgba(183,95,255,.1); border-color: var(--purple-bright); }
+    .replay-play.playing {
+      background: linear-gradient(135deg, var(--purple), var(--purple-bright));
+      border-color: var(--purple-bright);
+      color: #fff;
+    }
+    .replay-speed {
+      flex-shrink: 0;
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 4px 6px;
+      font-family: var(--tech);
+      font-size: 11px;
+      cursor: pointer;
+    }
+
+    /* ===== View Tabs (Timeline / Risk Map) ===== */
+    .view-tabs {
+      display: inline-flex;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 2px;
+      gap: 2px;
+    }
+    .view-tab {
+      padding: 3px 12px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      border-radius: 4px;
+      font-family: inherit;
+      text-transform: uppercase;
+      transition: background .15s, color .15s;
+    }
+    .view-tab:hover { color: var(--text-2); }
+    .view-tab.active {
+      background: rgba(183,95,255,.15);
+      color: var(--purple-bright);
+    }
+
+    /* ===== Risk Heatmap Grid ===== */
+    .risk-heatmap {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 10px;
+    }
+    .heatmap-cell {
+      position: relative;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-left: 2px solid var(--border);
+      border-radius: 6px;
+      padding: 12px 14px;
+      transition: border-color .25s, background .25s, transform .15s;
+      cursor: pointer;
+    }
+    .heatmap-cell:hover { transform: translateY(-1px); }
+    .heatmap-cell .hm-pair {
+      font-family: var(--tech);
+      font-size: 12px; font-weight: 700;
+      letter-spacing: 0.04em;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+    .heatmap-cell .hm-rate {
+      font-family: var(--tech);
+      font-variant-numeric: tabular-nums;
+      font-size: 18px; font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text);
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+    .heatmap-cell .hm-level {
+      font-family: var(--tech);
+      font-size: 9px; font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      display: inline-block;
+      padding: 2px 7px;
+      border-radius: 3px;
+    }
+    .heatmap-cell .hm-meta {
+      margin-top: 8px;
+      font-size: 10px; color: var(--muted);
+      letter-spacing: 0.03em;
+    }
+
+    /* 风险等级语义色左侧边 */
+    .heatmap-cell.lvl-LOW      { border-left-color: var(--green);  background: linear-gradient(90deg, rgba(34,197,94,.06), transparent 30%), var(--card); }
+    .heatmap-cell.lvl-MEDIUM   { border-left-color: var(--yellow); background: linear-gradient(90deg, rgba(234,179,8,.06), transparent 30%), var(--card); }
+    .heatmap-cell.lvl-HIGH     { border-left-color: var(--orange); background: linear-gradient(90deg, rgba(249,115,22,.08), transparent 30%), var(--card); }
+    .heatmap-cell.lvl-CRITICAL { border-left-color: var(--red);    background: linear-gradient(90deg, rgba(239,68,68,.10), transparent 30%), var(--card); }
+    .heatmap-cell.lvl-NONE     { opacity: 0.4; }
+
+    .heatmap-cell .hm-level.lvl-LOW      { background: rgba(34,197,94,.15);  color: var(--green); }
+    .heatmap-cell .hm-level.lvl-MEDIUM   { background: rgba(234,179,8,.15);  color: var(--yellow); }
+    .heatmap-cell .hm-level.lvl-HIGH     { background: rgba(249,115,22,.15); color: var(--orange); }
+    .heatmap-cell .hm-level.lvl-CRITICAL { background: rgba(239,68,68,.15);  color: var(--red); }
+    .heatmap-cell .hm-level.lvl-NONE     { background: rgba(107,114,128,.15); color: var(--muted); }
+
+    /* CRITICAL 呼吸光，吸引注意力 */
+    @keyframes criticalPulse {
+      0%, 100% { box-shadow: 0 0 0 rgba(239,68,68,0); }
+      50%      { box-shadow: 0 0 12px rgba(239,68,68,.35); }
+    }
+    .heatmap-cell.lvl-CRITICAL { animation: criticalPulse 2s ease-in-out infinite; }
+
     /* ===== Data Source Chip (lazy-loaded from DecisionLog on 0G Storage) ===== */
     .datasource-chip {
       position: relative;
@@ -861,8 +991,14 @@
     </div>
 
     <div class="section-title" style="display:flex;align-items:center;justify-content:space-between">
-      <span>Verifiable Audit Trail</span>
-      <button id="replayReset" class="replay-reset" title="Jump to latest" style="display:none">↻ Live</button>
+      <span id="viewSectionTitle">Verifiable Audit Trail</span>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="view-tabs" role="tablist">
+          <button class="view-tab active" data-view="timeline" role="tab">Timeline</button>
+          <button class="view-tab" data-view="heatmap" role="tab">Risk Map</button>
+        </div>
+        <button id="replayReset" class="replay-reset" title="Jump to latest" style="display:none">↻ Live</button>
+      </div>
     </div>
 
     <!-- Historical Replay: 拖动滑块回放 Agent 历史视角（合规场景：监管问"那一刻 Agent 掌握了什么"）-->
@@ -871,15 +1007,29 @@
         <span class="replay-label">Time Machine</span>
         <span class="replay-time mono" id="replayTimeLabel">—</span>
       </div>
-      <input type="range" id="replaySlider" class="replay-slider" min="0" max="100" value="100" />
+      <div class="replay-playrow">
+        <button id="replayPlay" class="replay-play" title="Auto-play">▶</button>
+        <input type="range" id="replaySlider" class="replay-slider" min="0" max="100" value="100" />
+        <select id="replaySpeed" class="replay-speed" title="Playback speed">
+          <option value="1">1x</option>
+          <option value="3" selected>3x</option>
+          <option value="10">10x</option>
+        </select>
+      </div>
       <div class="replay-footnote">
         <span id="replayCountLabel">Showing all alerts</span>
-        <span class="replay-hint">Drag to replay Agent's view at any point in time</span>
+        <span class="replay-hint">Drag or play to replay Agent's risk landscape over time</span>
       </div>
     </div>
 
+    <!-- Timeline view -->
     <div id="auditTimeline" class="timeline">
       <div class="empty-state">Loading from 0G Chain...</div>
+    </div>
+
+    <!-- Risk Map view: 18 对风险热力图（按当前 cutoff 时间的 per-pair 最新 level 渲染）-->
+    <div id="riskHeatmap" class="risk-heatmap" style="display:none">
+      <div class="empty-state">Heatmap will populate after alerts load.</div>
     </div>
   </div>
 
@@ -1125,61 +1275,263 @@ function filterTimeline(pair) {
 }
 
 /**
- * Historical Replay 基础版
- * Slider 代表时间轴（0=最早告警, 100=最新），拖动即按时间戳过滤
- * 合规叙事："监管问'4/16 18:22 那一刻 Agent 掌握了什么'，拖到那里就给答案"
+ * Historical Replay 进阶版：时光机 + 风险地图
+ *
+ * 两大视图：
+ *   1. Timeline — 按时间显示告警卡片（现有）
+ *   2. Risk Map — 18 对货币的 per-pair 当前 level 热力图（新增）
+ *
+ * 统一数据驱动：Time Machine slider 的 cutoffTs 决定"Agent 当时的世界观"
+ * - Timeline: 只显示 timestamp <= cutoff 的告警
+ * - Risk Map: 每对取 timestamp <= cutoff 的最新告警决定 level
+ * - Hero 指标卡: 同步重算 Total Decisions / HIGH·CRITICAL / Pairs / Last Update
+ *
+ * Play 按钮: 从最早自动滚动到最新（支持 1x/3x/10x 速度）
+ *
+ * 合规叙事: EU AI Act Article 12 要求 "any decision must be replayable with full context"
+ * 这个界面让监管拖到任何时刻，看到 Agent 当时的完整风险判断
  */
+var REPLAY = {
+  alerts: [],
+  sorted: [],
+  minTs: 0,
+  maxTs: 0,
+  currentRatio: 1,
+  playing: false,
+  playHandle: null,
+  currentView: "timeline",
+};
+
 function setupHistoricalReplay(alerts) {
   var control = document.getElementById("replayControl");
   var slider = document.getElementById("replaySlider");
-  var timeLabel = document.getElementById("replayTimeLabel");
-  var countLabel = document.getElementById("replayCountLabel");
-  var resetBtn = document.getElementById("replayReset");
-
   if (!control || !slider || !alerts || alerts.length < 2) {
     if (control) control.style.display = "none";
     return;
   }
 
-  // 按时间排序（旧→新），供 slider 索引
-  var sorted = alerts.slice().sort(function(a, b) { return Number(a.timestamp) - Number(b.timestamp); });
-  var minTs = Number(sorted[0].timestamp);
-  var maxTs = Number(sorted[sorted.length - 1].timestamp);
+  REPLAY.alerts = alerts;
+  REPLAY.sorted = alerts.slice().sort(function(a, b) { return Number(a.timestamp) - Number(b.timestamp); });
+  REPLAY.minTs = Number(REPLAY.sorted[0].timestamp);
+  REPLAY.maxTs = Number(REPLAY.sorted[REPLAY.sorted.length - 1].timestamp);
 
   control.style.display = "block";
   slider.min = "0";
-  slider.max = "1000"; // 1000 段保证拖动精度
-  slider.value = "1000"; // 默认最新
+  slider.max = "1000";
+  slider.value = "1000";
 
-  function applyReplay(sliderVal) {
-    var ratio = sliderVal / 1000;
-    var cutoffTs = minTs + (maxTs - minTs) * ratio;
-    var visible = alerts.filter(function(a) { return Number(a.timestamp) <= cutoffTs; });
-
-    renderTimeline(visible);
-
-    // Label 更新
-    if (ratio >= 1.0) {
-      timeLabel.textContent = "Live — " + ftime(maxTs);
-      timeLabel.style.color = "var(--green)";
-      countLabel.textContent = "Showing all " + alerts.length + " alerts";
-      resetBtn.style.display = "none";
-    } else {
-      timeLabel.textContent = "Rewound to " + ftime(cutoffTs);
-      timeLabel.style.color = "var(--purple-bright)";
-      countLabel.textContent = "Agent's view at that moment: " + visible.length + " of " + alerts.length + " alerts";
-      resetBtn.style.display = "inline-block";
-    }
-  }
-
-  slider.addEventListener("input", function() { applyReplay(Number(this.value)); });
-  resetBtn.addEventListener("click", function() {
-    slider.value = "1000";
-    applyReplay(1000);
+  slider.addEventListener("input", function() {
+    REPLAY.currentRatio = Number(this.value) / 1000;
+    applyReplay();
   });
 
-  // 初始化 label
-  applyReplay(1000);
+  document.getElementById("replayReset").addEventListener("click", function() {
+    stopPlayback();
+    slider.value = "1000";
+    REPLAY.currentRatio = 1;
+    applyReplay();
+  });
+
+  document.getElementById("replayPlay").addEventListener("click", togglePlayback);
+
+  // View tabs
+  var tabs = document.querySelectorAll(".view-tab");
+  tabs.forEach(function(tab) {
+    tab.addEventListener("click", function() {
+      tabs.forEach(function(t) { t.classList.remove("active"); });
+      tab.classList.add("active");
+      switchView(tab.getAttribute("data-view"));
+    });
+  });
+
+  applyReplay();
+}
+
+/**
+ * 计算 cutoff 时刻 Agent 对每对货币的"当前已知 level + 最新 rate"
+ * 实现"世界观快照"：只看过去不看未来
+ */
+function computeStateAtTime(alerts, cutoffTs) {
+  var allPairs = {};
+  alerts.forEach(function(a) { allPairs[a.currencyPair] = true; });
+  var pairList = Object.keys(allPairs);
+
+  var state = {};
+  pairList.forEach(function(pair) { state[pair] = null; });
+
+  // 按 pair 分组后取每组 timestamp<=cutoff 的最新
+  alerts.forEach(function(a) {
+    var ts = Number(a.timestamp);
+    if (ts > cutoffTs) return;
+    var current = state[a.currencyPair];
+    if (!current || ts > Number(current.timestamp)) {
+      state[a.currencyPair] = a;
+    }
+  });
+
+  return { pairs: pairList.sort(), state: state };
+}
+
+function applyReplay() {
+  var cutoffTs = REPLAY.minTs + (REPLAY.maxTs - REPLAY.minTs) * REPLAY.currentRatio;
+  var visible = REPLAY.alerts.filter(function(a) { return Number(a.timestamp) <= cutoffTs; });
+  var isLive = REPLAY.currentRatio >= 1.0;
+
+  // Labels
+  var timeLabel = document.getElementById("replayTimeLabel");
+  var countLabel = document.getElementById("replayCountLabel");
+  var resetBtn = document.getElementById("replayReset");
+
+  if (isLive) {
+    timeLabel.textContent = "Live — " + ftime(REPLAY.maxTs);
+    timeLabel.style.color = "var(--green)";
+    countLabel.textContent = "Showing all " + REPLAY.alerts.length + " alerts · " +
+                             "Agent's full audit trail";
+    resetBtn.style.display = "none";
+  } else {
+    timeLabel.textContent = "Rewound to " + ftime(cutoffTs);
+    timeLabel.style.color = "var(--purple-bright)";
+    countLabel.textContent = "Agent's view at that moment: " + visible.length + " of " +
+                             REPLAY.alerts.length + " alerts";
+    resetBtn.style.display = "inline-block";
+  }
+
+  // Hero 指标卡也回滚 — 让整个 Dashboard 共享"时光机"状态
+  updateHeroStats(visible);
+
+  // 主视图
+  if (REPLAY.currentView === "timeline") {
+    renderTimeline(visible);
+  } else {
+    renderRiskMap(visible);
+  }
+}
+
+/**
+ * Hero 指标卡随 replay 联动
+ */
+function updateHeroStats(visible) {
+  var total = visible.length;
+  var high = visible.filter(function(a) {
+    var lvl = Number(a.level);
+    return lvl === 2 || lvl === 3;  // HIGH or CRITICAL
+  }).length;
+  var pairs = {};
+  visible.forEach(function(a) { pairs[a.currencyPair] = true; });
+
+  var latestTs = 0;
+  visible.forEach(function(a) {
+    var t = Number(a.timestamp);
+    if (t > latestTs) latestTs = t;
+  });
+
+  document.getElementById("statTotal").textContent = total;
+  document.getElementById("statHigh").textContent = high;
+  document.getElementById("statPairs").textContent = Object.keys(pairs).length;
+  document.getElementById("statTime").textContent = latestTs > 0 ? ftime(latestTs) : "—";
+}
+
+/**
+ * 渲染风险热力图：每对一个 tile，按最新 level 着色
+ */
+function renderRiskMap(visible) {
+  var container = document.getElementById("riskHeatmap");
+  clear(container);
+
+  if (visible.length === 0) {
+    container.appendChild(el("div", "empty-state", "No alerts yet at this moment. Drag slider forward."));
+    return;
+  }
+
+  var snap = computeStateAtTime(visible, REPLAY.maxTs); // cutoff 已经在 visible 里体现
+
+  snap.pairs.forEach(function(pair) {
+    var a = snap.state[pair];
+    var cell = el("div", "heatmap-cell");
+    if (a) {
+      var lvl = LEVELS[Number(a.level)];
+      cell.classList.add("lvl-" + lvl);
+      cell.appendChild(el("div", "hm-pair", pair));
+      cell.appendChild(el("div", "hm-rate", f6(a.spotRate)));
+      cell.appendChild(el("span", "hm-level lvl-" + lvl, lvl));
+      var meta = el("div", "hm-meta", ftime(Number(a.timestamp)));
+      cell.appendChild(meta);
+      cell.addEventListener("click", function() { showAIDetail(a); });
+    } else {
+      cell.classList.add("lvl-NONE");
+      cell.appendChild(el("div", "hm-pair", pair));
+      cell.appendChild(el("div", "hm-rate", "—"));
+      cell.appendChild(el("span", "hm-level lvl-NONE", "NO DATA"));
+    }
+    container.appendChild(cell);
+  });
+}
+
+function switchView(view) {
+  REPLAY.currentView = view;
+  var timeline = document.getElementById("auditTimeline");
+  var heatmap = document.getElementById("riskHeatmap");
+  var title = document.getElementById("viewSectionTitle");
+
+  if (view === "heatmap") {
+    timeline.style.display = "none";
+    heatmap.style.display = "grid";
+    title.textContent = "Risk Landscape (Live Heatmap)";
+  } else {
+    timeline.style.display = "";
+    heatmap.style.display = "none";
+    title.textContent = "Verifiable Audit Trail";
+  }
+  applyReplay();
+}
+
+/**
+ * 自动播放：从当前位置推进到最新，支持 1x/3x/10x
+ * 每 80ms 推进一步，速度因子决定每步推进多少
+ */
+function togglePlayback() {
+  if (REPLAY.playing) { stopPlayback(); return; }
+  startPlayback();
+}
+
+function startPlayback() {
+  var slider = document.getElementById("replaySlider");
+  var btn = document.getElementById("replayPlay");
+  var speedSel = document.getElementById("replaySpeed");
+
+  // 如果已在最末位，从头开始
+  if (REPLAY.currentRatio >= 1.0) {
+    REPLAY.currentRatio = 0;
+    slider.value = "0";
+    applyReplay();
+  }
+
+  REPLAY.playing = true;
+  btn.textContent = "⏸";
+  btn.classList.add("playing");
+
+  var stepMs = 80;
+  REPLAY.playHandle = setInterval(function() {
+    var speed = Number(speedSel.value) || 3;
+    var increment = (stepMs / 1000) * (speed * 0.008); // 整条轨迹 ~5s at 1x → 速度因子调整
+    REPLAY.currentRatio = Math.min(1, REPLAY.currentRatio + increment);
+    slider.value = String(Math.round(REPLAY.currentRatio * 1000));
+    applyReplay();
+    if (REPLAY.currentRatio >= 1.0) stopPlayback();
+  }, stepMs);
+}
+
+function stopPlayback() {
+  REPLAY.playing = false;
+  if (REPLAY.playHandle) {
+    clearInterval(REPLAY.playHandle);
+    REPLAY.playHandle = null;
+  }
+  var btn = document.getElementById("replayPlay");
+  if (btn) {
+    btn.textContent = "▶";
+    btn.classList.remove("playing");
+  }
 }
 
 function renderTimeline(alerts) {
