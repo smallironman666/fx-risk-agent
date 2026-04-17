@@ -97,6 +97,7 @@
 
     /* ===== Data Source Chip (lazy-loaded from DecisionLog on 0G Storage) ===== */
     .datasource-chip {
+      position: relative;
       display: inline-flex; align-items: center; gap: 4px;
       padding: 1px 7px; margin-left: 6px;
       border-radius: 3px;
@@ -124,6 +125,29 @@
       background: rgba(107,114,128,.10);
       color: var(--muted);
       border-color: rgba(107,114,128,.3);
+    }
+    /* 自定义 tooltip：比原生 title 更快显示、样式统一 */
+    .datasource-chip[data-tip]::after {
+      content: attr(data-tip);
+      position: absolute;
+      left: 0; top: calc(100% + 6px);
+      max-width: 280px;
+      white-space: normal;
+      background: #0b0d12;
+      color: #e5e7eb;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 6px 10px;
+      font-size: 11px; font-weight: 500; letter-spacing: normal;
+      line-height: 1.4;
+      opacity: 0; visibility: hidden;
+      transition: opacity .12s, visibility .12s;
+      pointer-events: none;
+      z-index: 1000;
+      box-shadow: 0 4px 12px rgba(0,0,0,.4);
+    }
+    .datasource-chip[data-tip]:hover::after {
+      opacity: 1; visibility: visible;
     }
     .datasource-chip-skeleton {
       display: inline-block; width: 72px; height: 16px; margin-left: 6px;
@@ -1580,7 +1604,8 @@ function attachDataSourceBadge(leftContainer, rootHash) {
       return;
     }
     var chip = el("span", "datasource-chip " + badge.cls, badge.label);
-    chip.title = badge.title;
+    chip.setAttribute("data-tip", badge.title); // 自定义 CSS tooltip
+    chip.title = badge.title;                    // 原生 title 兜底（a11y）
     leftContainer.replaceChild(chip, placeholder);
   });
 }
