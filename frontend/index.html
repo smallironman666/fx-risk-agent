@@ -358,9 +358,11 @@
       text-transform: uppercase;
     }
     .passport-tokenid {
-      font-family: var(--display);
-      font-size: 28px;
-      letter-spacing: -0.04em;
+      font-family: var(--tech);
+      font-variant-numeric: tabular-nums;
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -0.03em;
       line-height: 1;
       color: var(--text);
     }
@@ -473,11 +475,12 @@
       letter-spacing: .2px;
     }
     a.row-val {
-      color: var(--cyan);
+      color: var(--text-2);
       text-decoration: none;
-      transition: color .15s;
+      border-bottom: 1px dotted var(--border);
+      transition: color .15s, border-color .15s;
     }
-    a.row-val:hover { color: var(--purple); }
+    a.row-val:hover { color: var(--text); border-bottom-color: var(--text-2); }
 
     /* =================================================
        V2 TIMELINE — Agent Badge Pills
@@ -673,7 +676,7 @@
       color: var(--red);
     }
     .modal-hash {
-      font-family: var(--tech); font-size: 11px; color: var(--cyan);
+      font-family: var(--tech); font-size: 11px; color: var(--text-2);
       word-break: break-all;
     }
     .modal-footer {
@@ -1195,13 +1198,16 @@ function showAIDetail(alert) {
   c3.appendChild(el("div", "ai-value", f6(alert.threshold)));
   panel.appendChild(c3);
 
-  // Reporter
+  // Reporter — 中间省略号截断，不折行
   var c4 = el("div", "ai-card");
   c4.appendChild(el("div", "ai-label", "Reporter (Agent Wallet)"));
   var addr = el("div", "ai-value mono");
-  addr.style.fontSize = "12px";
-  addr.style.wordBreak = "break-all";
-  addr.textContent = alert.reporter;
+  addr.style.cssText = "font-size:12px;font-family:var(--tech);color:var(--text);letter-spacing:0";
+  var full = alert.reporter || "";
+  addr.textContent = full.length > 16
+    ? full.slice(0, 8) + "…" + full.slice(-6)
+    : full;
+  addr.title = full;
   c4.appendChild(addr);
   panel.appendChild(c4);
 
@@ -1209,7 +1215,7 @@ function showAIDetail(alert) {
   var c5 = el("div", "ai-card");
   c5.appendChild(el("div", "ai-label", "0G Storage Root Hash"));
   var hashLink = el("span", "ai-value mono");
-  hashLink.style.cssText = "font-size:11px;word-break:break-all;color:var(--cyan);display:block;cursor:pointer";
+  hashLink.style.cssText = "font-size:11px;word-break:break-all;color:var(--text-2);display:block;cursor:pointer;font-family:var(--tech)";
   hashLink.textContent = alert.storageRootHash;
   hashLink.title = "Click to view full AI decision";
   hashLink.addEventListener("click", function() { openDecisionModal(alert.storageRootHash); });
@@ -1220,14 +1226,16 @@ function showAIDetail(alert) {
   var btnRow = el("div", "");
   btnRow.style.cssText = "margin-top:8px;display:flex;gap:8px;flex-wrap:wrap";
 
+  // View AI Decision — 主 CTA：0G 紫色渐变（skill 允许：主操作焦点）
   var viewBtn = el("button", "");
-  viewBtn.style.cssText = "font-size:12px;padding:4px 12px;background:var(--blue);color:#fff;border:none;border-radius:4px;cursor:pointer;display:inline-block;font-family:inherit";
+  viewBtn.style.cssText = "font-size:12px;padding:6px 14px;background:linear-gradient(135deg,var(--purple),var(--purple-bright));color:#fff;border:none;border-radius:4px;cursor:pointer;display:inline-block;font-family:inherit;font-weight:500";
   viewBtn.textContent = "View AI Decision";
   viewBtn.addEventListener("click", function() { openDecisionModal(alert.storageRootHash); });
   btnRow.appendChild(viewBtn);
 
+  // Download Original — 次级按钮：中性边框（不抢主 CTA 焦点）
   var dlBtn = el("a", "");
-  dlBtn.style.cssText = "font-size:12px;padding:4px 12px;background:var(--green);color:#fff;border-radius:4px;text-decoration:none;display:inline-block";
+  dlBtn.style.cssText = "font-size:12px;padding:6px 14px;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:4px;text-decoration:none;display:inline-block;font-family:inherit";
   dlBtn.textContent = "Download Original";
   dlBtn.href = "https://indexer-storage-testnet-turbo.0g.ai/file?root=" + alert.storageRootHash;
   dlBtn.target = "_blank";
@@ -1487,9 +1495,8 @@ function renderAgentCard(info) {
     }
   }
 
-  // Token ID
-  var paddedId = String(AGENT_TOKEN_ID).padStart(4, "0");
-  if (tokenIdEl) tokenIdEl.textContent = paddedId;
+  // Token ID — 原值显示（不做前导 0 填充，避免 Token #0 读作 #0000）
+  if (tokenIdEl) tokenIdEl.textContent = String(AGENT_TOKEN_ID);
 
   // 名字
   if (nameEl) nameEl.textContent = info.name;
