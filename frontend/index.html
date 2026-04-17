@@ -92,13 +92,20 @@
     @keyframes pulse { 0%,100% { opacity:1 } 50% { opacity:.3 } }
 
     /* ===== Main Layout ===== */
-    .main { display: grid; grid-template-columns: 280px 1fr 320px; min-height: calc(100vh - 50px); }
+    /* 固定视口高度，让三列各自独立滚动——右栏 AI Decision Detail 不会被时间线推下去 */
+    .main {
+      display: grid;
+      grid-template-columns: 280px 1fr 320px;
+      height: calc(100vh - 77px);  /* 100vh - (brand-band ~32px + topbar ~45px) */
+      overflow: hidden;
+    }
 
     /* ===== Left: Pairs Overview ===== */
     .left {
       background: var(--surface);
       border-right: 1px solid var(--border);
       padding: 16px;
+      overflow-y: auto;
     }
     .left h2 { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
     .pair-card {
@@ -1726,9 +1733,9 @@ function renderDecisionModal(d, rootHash, source) {
       modalVerifyBox("⚠ Primary backend failed, switched to fallback. Reason: " + d.fallbackReason, "pending")));
   }
 
-  // TEE 仅对 0g-compute 有意义；doubao 路径没有 enclave，所以不显示
-  // Galileo 测试网的 TEE 签名仍在 pending-init 阶段（0G 路线图上主网 Aristotle 才正式启用），
-  // 所以 verified=false 不代表失败，而是"尚未上线"——用温和 status 呈现而不是红色 error
+  // TEE 仅对 0g-compute 有意义；doubao 路径无 enclave，不显示此 section
+  // Galileo 测试网的 TEE attestation 是间歇性成功（有时 provider 返回有效签名，有时不返回）
+  // 所以 verified=false ≠ "失败"，而是"这次 provider 没返回签名"——用黄色 pending 呈现更准确
   if (d.aiBackend === "0g-compute" && d.inferenceVerification) {
     var v = d.inferenceVerification;
     var teeText, teeCls;
@@ -1736,8 +1743,9 @@ function renderDecisionModal(d, rootHash, source) {
       teeText = "✓ TEE signature verified · sealed inference on 0G Compute";
       teeCls = "";
     } else {
-      teeText = "⏳ TEE attestation pending · 0G Compute enclave signature not yet " +
-                "available on Galileo testnet (production rollout on Aristotle mainnet)";
+      teeText = "⏳ TEE attestation unavailable for this inference · " +
+                "provider signature not returned (Galileo testnet is beta; " +
+                "Aristotle mainnet will be production-grade)";
       teeCls = "pending";
     }
     body.appendChild(modalSection("TEE Verification (0G Compute)",
