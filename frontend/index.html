@@ -1726,11 +1726,22 @@ function renderDecisionModal(d, rootHash, source) {
       modalVerifyBox("⚠ Primary backend failed, switched to fallback. Reason: " + d.fallbackReason, "pending")));
   }
 
-  if (d.inferenceVerification) {
+  // TEE 仅对 0g-compute 有意义；doubao 路径没有 enclave，所以不显示
+  // Galileo 测试网的 TEE 签名仍在 pending-init 阶段（0G 路线图上主网 Aristotle 才正式启用），
+  // 所以 verified=false 不代表失败，而是"尚未上线"——用温和 status 呈现而不是红色 error
+  if (d.aiBackend === "0g-compute" && d.inferenceVerification) {
     var v = d.inferenceVerification;
+    var teeText, teeCls;
+    if (v.verified) {
+      teeText = "✓ TEE signature verified · sealed inference on 0G Compute";
+      teeCls = "";
+    } else {
+      teeText = "⏳ TEE attestation pending · 0G Compute enclave signature not yet " +
+                "available on Galileo testnet (production rollout on Aristotle mainnet)";
+      teeCls = "pending";
+    }
     body.appendChild(modalSection("TEE Verification (0G Compute)",
-      modalVerifyBox(v.verified ? "✓ TEE signature verified" : "✗ TEE verification failed",
-        v.verified ? "" : "error")));
+      modalVerifyBox(teeText, teeCls)));
   }
 
   if (d.agentTokenId != null) {
