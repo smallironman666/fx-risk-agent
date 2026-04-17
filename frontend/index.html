@@ -13,7 +13,7 @@
     :root {
       /* ===== Base neutral palette (aligned with 0G brandkit: black/white/gray base) ===== */
       --bg: #0a0c10; --surface: #13161e; --card: #1a1e2a;
-      --border: #252a3a; --text: #e4e7ef; --muted: #6b7280;
+      --border: #252a3a; --text: #e4e7ef; --text-2: #b4bac6; --muted: #6b7280;
 
       /* ===== Risk level semantic colors (unchanged) ===== */
       --green: #22c55e; --yellow: #eab308; --orange: #f97316; --red: #ef4444;
@@ -37,24 +37,8 @@
       font-family: -apple-system, 'Segoe UI', sans-serif;
       background: var(--bg); color: var(--text);
       min-height: 100vh;
-      position: relative;
+      -webkit-font-smoothing: antialiased;
     }
-    /* 0G signature motif: dotted gradient background
-       仅在 body::before 上作为装饰层，pointer-events:none 不干扰交互 */
-    body::before {
-      content: "";
-      position: fixed; inset: 0;
-      pointer-events: none;
-      z-index: 0;
-      background-image:
-        radial-gradient(circle at 1px 1px, rgba(183,95,255,.08) 1px, transparent 1px),
-        radial-gradient(ellipse 1200px 600px at 20% -10%, rgba(146,0,225,.12), transparent 60%),
-        radial-gradient(ellipse 800px 400px at 90% 110%, rgba(183,95,255,.08), transparent 60%);
-      background-size: 24px 24px, auto, auto;
-      opacity: .9;
-    }
-    /* 保证所有实体内容叠在装饰层之上 */
-    .brand-band, .topbar, .main, .modal-backdrop { position: relative; z-index: 1; }
     code, .mono { font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace; }
 
     /* ===== Top Status Bar ===== */
@@ -67,64 +51,37 @@
       overflow-x: auto;
     }
     .topbar .logo { font-weight: 700; font-size: 15px; white-space: nowrap; }
-    .topbar .logo span {
-      background: linear-gradient(90deg, var(--purple-bright), var(--purple-soft));
-      -webkit-background-clip: text; background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
+    .topbar .logo span { color: var(--text); }
 
-    /* ===== Brand Band: Powered by 0G ===== */
+    /* ===== Brand Band: Powered by 0G (克制版，只用紫色做底线，不做背景装饰) ===== */
     .brand-band {
-      position: relative;
       display: flex; align-items: center; justify-content: center;
-      gap: 12px;
-      padding: 8px 24px;
-      background:
-        radial-gradient(circle at 20% 50%, rgba(146,0,225,.35), transparent 60%),
-        radial-gradient(circle at 80% 50%, rgba(183,95,255,.25), transparent 60%),
-        linear-gradient(90deg, #0d0a1a, #150628, #0d0a1a);
-      border-bottom: 1px solid rgba(183,95,255,.2);
+      gap: 10px;
+      padding: 7px 24px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
       font-family: var(--tech);
-      font-size: 11px;
-      letter-spacing: 2px;
-      color: var(--purple-soft);
-      overflow: hidden;
-    }
-    .brand-band::before {
-      content: "";
-      position: absolute; inset: 0;
-      background-image: radial-gradient(circle at 1px 1px, rgba(183,95,255,.18) 1px, transparent 1px);
-      background-size: 14px 14px;
-      opacity: .6;
-      pointer-events: none;
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      text-transform: uppercase;
     }
     .brand-band .brand-og {
       font-family: var(--display);
-      font-size: 15px;
+      font-size: 13px;
       color: var(--purple-bright);
-      text-shadow: 0 0 8px var(--purple-glow);
       letter-spacing: 0;
     }
-    .brand-band .brand-text {
-      position: relative; z-index: 1;
-      text-transform: uppercase;
-    }
     .brand-band .brand-text b {
-      color: var(--text);
-      font-weight: 600;
+      color: var(--purple-bright);
+      font-weight: 700;
     }
     .brand-band .brand-link {
-      position: relative; z-index: 1;
-      color: var(--purple-soft);
+      color: var(--text-2);
       text-decoration: none;
-      border-bottom: 1px dashed rgba(203,138,255,.4);
-      padding-bottom: 1px;
-      transition: color .15s, border-color .15s;
+      transition: color .15s;
     }
-    .brand-band .brand-link:hover {
-      color: var(--purple-pale);
-      border-bottom-color: var(--purple-pale);
-    }
+    .brand-band .brand-link:hover { color: var(--text); }
     .topbar .sep { width: 1px; height: 20px; background: var(--border); flex-shrink: 0; }
     .topbar .item { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
     .topbar .label { color: var(--muted); }
@@ -154,25 +111,29 @@
       transition: border-color .2s;
     }
     .pair-card {
-      transition: border-color .2s, transform .15s, box-shadow .2s;
+      transition: border-color .15s, transform .12s;
     }
     .pair-card:hover {
-      border-color: rgba(183,95,255,.4);
+      border-color: rgba(255,255,255,.12);
       transform: translateY(-1px);
-      box-shadow: 0 4px 16px rgba(0,0,0,.25), 0 0 0 1px rgba(183,95,255,.15);
     }
     .pair-card.active {
-      border-color: var(--cyan);
-      box-shadow: 0 0 0 1px rgba(6,182,212,.3), 0 0 20px rgba(6,182,212,.15);
+      border-color: rgba(255,255,255,.2);
     }
     .pair-card .pair-name {
       font-weight: 700;
       font-size: 13px;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.04em;
       font-family: var(--tech);
     }
-    .pair-card .pair-row { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); }
-    .pair-card .pair-rate { font-family: var(--tech); font-size: 20px; font-weight: 700; margin: 4px 0; }
+    .pair-card .pair-row { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); }
+    .pair-card .pair-rate {
+      font-family: var(--tech);
+      font-variant-numeric: tabular-nums;
+      font-size: 22px; font-weight: 700;
+      letter-spacing: -0.02em;
+      margin: 6px 0;
+    }
     .pair-card .pair-spark svg { display: block; width: 100%; height: 100%; }
     .badge {
       display: inline-block; padding: 1px 8px; border-radius: 3px;
@@ -197,7 +158,7 @@
     .datasource-chip::before {
       content: ""; width: 6px; height: 6px; border-radius: 50%; display: inline-block;
     }
-    .datasource-chip.ds-live::before { background: var(--green); box-shadow: 0 0 6px rgba(34,197,94,.6); }
+    .datasource-chip.ds-live::before { background: var(--green); }
     .datasource-chip.ds-cache::before { background: var(--yellow); }
     .datasource-chip.ds-sim::before { background: var(--muted); }
     .datasource-chip.ds-live {
@@ -258,10 +219,25 @@
       text-transform: uppercase; letter-spacing: 1px;
       margin-bottom: 10px;
     }
-    .stats-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 20px; }
-    .stat { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 14px; }
-    .stat .sl { font-size: 11px; color: var(--muted); margin-bottom: 2px; }
-    .stat .sv { font-size: 22px; font-weight: 700; }
+    .stats-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; margin-bottom: 32px; }
+    .stat {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 8px; padding: 20px 24px;
+      transition: border-color .15s;
+    }
+    .stat:hover { border-color: rgba(255,255,255,.12); }
+    .stat .sl {
+      font-size: 10px; color: var(--muted); font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+    .stat .sv {
+      font-family: var(--tech);
+      font-variant-numeric: tabular-nums;
+      font-size: 44px; font-weight: 800;
+      letter-spacing: -0.03em; line-height: 1;
+      color: var(--text);
+    }
 
     /* ===== Audit Timeline ===== */
     .timeline { position: relative; padding-left: 28px; }
@@ -345,28 +321,10 @@
       position: relative;
       padding: 16px;
       margin-bottom: 20px;
-      border-radius: 12px;
-      background:
-        linear-gradient(180deg, rgba(183,95,255,.08) 0%, rgba(6,182,212,.02) 100%),
-        var(--card);
-      border: 1px solid rgba(183,95,255,.25);
-      overflow: hidden;
-      box-shadow:
-        0 0 24px rgba(183,95,255,.08),
-        inset 0 1px 0 rgba(255,255,255,.03);
-    }
-
-    /* Scanline texture overlay */
-    .agent-passport::before {
-      content: '';
-      position: absolute; inset: 0;
-      background-image: repeating-linear-gradient(
-        0deg,
-        transparent 0, transparent 2px,
-        rgba(183,95,255,.025) 2px, rgba(183,95,255,.025) 3px
-      );
-      pointer-events: none;
-      opacity: 0.6;
+      border-radius: 8px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-left: 2px solid var(--purple-bright);  /* 唯一紫色标识：INFT 身份边 */
     }
 
     .passport-head {
@@ -379,40 +337,32 @@
     }
 
     .sigil {
-      width: 52px; height: 52px;
-      border-radius: 8px;
-      background: linear-gradient(135deg, #1a1e2a 0%, #252a3a 100%);
-      border: 1px solid rgba(183,95,255,.3);
+      width: 48px; height: 48px;
+      border-radius: 6px;
+      background: var(--surface);
+      border: 1px solid var(--border);
       display: flex; align-items: center; justify-content: center;
       flex-shrink: 0;
       overflow: hidden;
-      box-shadow: 0 4px 12px rgba(0,0,0,.3), inset 0 0 8px rgba(183,95,255,.08);
     }
     .sigil svg { width: 100%; height: 100%; display: block; }
 
     .passport-head-meta { flex: 1; min-width: 0; }
     .passport-label {
       font-family: var(--tech);
-      font-size: 9px;
-      color: var(--purple);
-      letter-spacing: 1.5px;
+      font-size: 10px;
+      color: var(--purple-bright);
+      letter-spacing: 0.1em;
       font-weight: 600;
-      margin-bottom: 2px;
-      display: flex; align-items: center; gap: 6px;
-    }
-    .passport-label::after {
-      content: ''; flex: 1; height: 1px;
-      background: linear-gradient(90deg, rgba(183,95,255,.3), transparent);
+      margin-bottom: 4px;
+      text-transform: uppercase;
     }
     .passport-tokenid {
       font-family: var(--display);
-      font-size: 24px;
-      letter-spacing: -1px;
-      line-height: 1.1;
-      background: linear-gradient(90deg, var(--purple) 0%, var(--cyan) 100%);
-      -webkit-background-clip: text;
-      background-clip: text;
-      -webkit-text-fill-color: transparent;
+      font-size: 28px;
+      letter-spacing: -0.04em;
+      line-height: 1;
+      color: var(--text);
     }
 
     .passport-name {
@@ -445,11 +395,10 @@
       border-radius: 3px;
     }
     .status-pulse {
-      width: 5px; height: 5px;
+      width: 6px; height: 6px;
       border-radius: 50%;
       background: var(--green);
-      box-shadow: 0 0 6px var(--green), 0 0 2px var(--green);
-      animation: heartbeat 1.4s ease-in-out infinite;
+      animation: heartbeat 1.8s ease-in-out infinite;
     }
     @keyframes heartbeat {
       0%, 100% { transform: scale(1); opacity: 1; }
@@ -473,37 +422,23 @@
       font-weight: 600;
     }
     .meter-value {
-      font-family: var(--display);
-      font-size: 14px;
-      color: var(--cyan);
-      letter-spacing: -0.5px;
+      font-family: var(--tech);
+      font-variant-numeric: tabular-nums;
+      font-size: 13px; font-weight: 600;
+      color: var(--text);
+      letter-spacing: -0.01em;
     }
     .meter-bar {
-      height: 4px;
-      background: rgba(183,95,255,.12);
+      height: 3px;
+      background: var(--border);
       border-radius: 2px;
       overflow: hidden;
-      position: relative;
     }
     .meter-fill {
       height: 100%;
-      background: linear-gradient(90deg, var(--purple), var(--cyan));
-      box-shadow: 0 0 8px rgba(6,182,212,.5);
+      background: var(--purple-bright);
       border-radius: 2px;
-      transition: width .8s cubic-bezier(.4,0,.2,1);
-      position: relative;
-    }
-    .meter-fill::after {
-      content: '';
-      position: absolute;
-      top: 0; right: 0; bottom: 0;
-      width: 12px;
-      background: linear-gradient(90deg, transparent, rgba(255,255,255,.4), transparent);
-      animation: meter-shimmer 2s ease-in-out infinite;
-    }
-    @keyframes meter-shimmer {
-      0%, 100% { opacity: .6; transform: translateX(0); }
-      50% { opacity: 1; transform: translateX(-4px); }
+      transition: width .6s cubic-bezier(.4,0,.2,1);
     }
 
     /* Info grid */
@@ -562,8 +497,8 @@
       content: '';
       position: absolute;
       left: -1px; top: -1px; bottom: -1px;
-      width: 3px;
-      background: linear-gradient(180deg, var(--purple), var(--cyan));
+      width: 2px;
+      background: var(--purple-bright);
       border-radius: 8px 0 0 8px;
     }
     .tl-card.v1 {
@@ -574,54 +509,51 @@
       opacity: 1;
     }
 
-    /* Agent chip with sigil dot */
+    /* Agent chip — 中性灰徽章，INFT 身份由 tl-card.v2 左紫边承载 */
     .agent-chip {
       display: inline-flex;
       align-items: center;
       gap: 5px;
-      padding: 2px 9px 2px 4px;
-      border-radius: 999px;
-      background: linear-gradient(90deg, rgba(183,95,255,.18), rgba(183,95,255,.08));
-      border: 1px solid rgba(183,95,255,.35);
+      padding: 2px 8px 2px 5px;
+      border-radius: 3px;
+      background: rgba(255,255,255,.04);
+      border: 1px solid var(--border);
       font-family: var(--tech);
       font-size: 10px;
-      color: #c7b9fb;
+      color: var(--text-2);
       font-weight: 600;
+      letter-spacing: 0.04em;
       margin-left: 8px;
-      transition: all .15s;
+      transition: border-color .15s;
     }
-    .agent-chip:hover {
-      background: linear-gradient(90deg, rgba(183,95,255,.28), rgba(183,95,255,.15));
-      transform: translateY(-1px);
-      box-shadow: 0 2px 8px rgba(183,95,255,.2);
-    }
+    .agent-chip:hover { border-color: rgba(255,255,255,.15); }
     .agent-chip-dot {
-      width: 10px; height: 10px;
+      width: 6px; height: 6px;
       border-radius: 50%;
-      background: linear-gradient(135deg, var(--purple), var(--cyan));
-      box-shadow: 0 0 4px rgba(183,95,255,.6);
+      background: var(--purple-bright);
       flex-shrink: 0;
     }
 
-    /* Backend chip */
+    /* Backend chip — 中性 */
     .backend-chip {
       display: inline-flex;
       align-items: center;
       gap: 4px;
       padding: 2px 8px;
-      border-radius: 999px;
-      background: rgba(6,182,212,.1);
-      border: 1px solid rgba(6,182,212,.3);
+      border-radius: 3px;
+      background: rgba(255,255,255,.04);
+      border: 1px solid var(--border);
       font-family: var(--tech);
       font-size: 10px;
-      color: #67e3f3;
+      color: var(--text-2);
       font-weight: 500;
+      letter-spacing: 0.04em;
       margin-left: 5px;
     }
     .backend-chip.tee {
       color: var(--green);
-      background: rgba(34,197,94,.1);
-      border-color: rgba(34,197,94,.3);
+      border-color: rgba(34,197,94,.25);
+      background: rgba(34,197,94,.06);
     }
     .backend-chip-icon {
       font-size: 10px;
@@ -648,15 +580,16 @@
     .topbar #topContract {
       font-family: var(--tech);
       font-size: 12px;
-      color: var(--cyan);
+      color: var(--text);
     }
     .topbar #topAlertCount {
       font-family: var(--tech);
       font-size: 12px;
+      color: var(--text);
     }
     .topbar #agentStatus {
       font-family: var(--tech);
-      color: var(--purple);
+      color: var(--text);
       font-weight: 600;
     }
 
