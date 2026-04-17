@@ -44,11 +44,11 @@ export class RiskOracleV2Client {
     spotRate: number,
     threshold: number,
     storageRootHash: string,
-    agentTokenId: number,
+    agentTokenId: bigint,
     aiBackend: string
   ): Promise<string> {
     console.log(
-      `[ChainV2] submitAlert ${currencyPair} lvl=${RiskLevel[level]} agent=#${agentTokenId} backend=${aiBackend}`
+      `[ChainV2] submitAlert ${currencyPair} lvl=${RiskLevel[level]} agent=#${agentTokenId.toString()} backend=${aiBackend}`
     );
 
     const paddedHash = ethers.zeroPadValue(storageRootHash, 32);
@@ -67,8 +67,8 @@ export class RiskOracleV2Client {
     return receipt.hash;
   }
 
-  async getAlertCount(): Promise<number> {
-    return Number(await this.contract.getAlertCount());
+  async getAlertCount(): Promise<bigint> {
+    return BigInt(await this.contract.getAlertCount());
   }
 
   async getLatestAlerts(count: number = 5): Promise<any[]> {
@@ -79,7 +79,7 @@ export class RiskOracleV2Client {
     return await this.contract.agentContract();
   }
 
-  async getAlertCountByAgent(agentTokenId: number): Promise<number> {
-    return Number(await this.contract.alertCountByAgent(agentTokenId));
+  async getAlertCountByAgent(agentTokenId: bigint): Promise<bigint> {
+    return BigInt(await this.contract.alertCountByAgent(agentTokenId));
   }
 }

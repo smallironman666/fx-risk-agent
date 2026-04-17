@@ -50,18 +50,15 @@ export class AgentRegistryClient {
 
   /**
    * Mint 一个新 Agent
-   * @param agentName       Agent 名称
-   * @param version         版本
-   * @param modelType       模型类型（如 "fx-risk-inference"）
-   * @param storageRootHash 0G Storage 中完整元数据 JSON 的 rootHash
-   * @returns { tokenId, txHash }
+   * tokenId 使用 bigint 贯穿全栈：uint256 可达 2^256-1，Number 只安全到 2^53-1
+   * @returns { tokenId, txHash } tokenId 为 bigint，显示时调用 .toString()
    */
   async mintAgent(
     agentName: string,
     version: string,
     modelType: string,
     storageRootHash: string
-  ): Promise<{ tokenId: number; txHash: string }> {
+  ): Promise<{ tokenId: bigint; txHash: string }> {
     const paddedHash = ethers.zeroPadValue(storageRootHash, 32);
 
     console.log(`[AgentRegistry] Minting agent "${agentName}" v${version}...`);
@@ -75,14 +72,14 @@ export class AgentRegistryClient {
     );
     const receipt = await tx.wait();
 
-    // 从 event log 中解析 tokenId
+    // 从 event log 中解析 tokenId，直接保留 ethers 返回的 bigint，不要 Number()
     const iface = new ethers.Interface(AGENT_INFT_ABI);
-    let tokenId = -1;
+    let tokenId: bigint | null = null;
     for (const log of receipt.logs) {
       try {
         const parsed = iface.parseLog(log);
         if (parsed?.name === "AgentMinted") {
-          tokenId = Number(parsed.args.tokenId);
+          tokenId = parsed.args.tokenId as bigint;
           break;
         }
       } catch {
@@ -90,28 +87,28 @@ export class AgentRegistryClient {
       }
     }
 
-    if (tokenId < 0) {
+    if (tokenId === null) {
       throw new Error("Failed to parse tokenId from AgentMinted event");
     }
 
-    console.log(`[AgentRegistry] Agent minted: tokenId=${tokenId}, tx=${receipt.hash}`);
+    console.log(`[AgentRegistry] Agent minted: tokenId=${tokenId.toString()}, tx=${receipt.hash}`);
     return { tokenId, txHash: receipt.hash };
   }
 
   /**
    * 更新 Agent 状态（每次推理会话结束时调用）
    */
-  async updateAgentState(tokenId: number, newStorageRootHash: string): Promise<string> {
+  async updateAgentState(tokenId: bigint, newStorageRootHash: string): Promise<string> {
     const paddedHash = ethers.zeroPadValue(newStorageRootHash, 32);
     const tx = await this.contract.updateAgentState(tokenId, paddedHash, {
       gasPrice: OG_MIN_GAS_PRICE,
     });
     const receipt = await tx.wait();
-    console.log(`[AgentRegistry] State updated for tokenId=${tokenId}, tx=${receipt.hash}`);
+    console.log(`[AgentRegistry] State updated for tokenId=${tokenId.toString()}, tx=${receipt.hash}`);
     return receipt.hash;
   }
 
-  async getAgent(tokenId: number): Promise<AgentInfo> {
+  async getAgent(tokenId: bigint): Promise<AgentInfo> {
     const result = await this.contract.getAgent(tokenId);
     const meta = result[0];
     return {
@@ -128,29 +125,28 @@ export class AgentRegistryClient {
     };
   }
 
-  async ownerOf(tokenId: number): Promise<string> {
+  async ownerOf(tokenId: bigint): Promise<string> {
     return await this.contract.ownerOf(tokenId);
   }
 
-  async inferenceCount(tokenId: number): Promise<number> {
-    const count = await this.contract.inferenceCount(tokenId);
-    return Number(count);
+  async inferenceCount(tokenId: bigint): Promise<bigint> {
+    // 保留 bigint，避免大 tokenId 下的推理计数被 Number() 截断
+    return BigInt(await this.contract.inferenceCount(tokenId));
   }
 
-  async totalSupply(): Promise<number> {
-    const count = await this.contract.totalSupply();
-    return Number(count);
+  async totalSupply(): Promise<bigint> {
+    return BigInt(await this.contract.totalSupply());
   }
 
   /**
    * 启动校验：断言本钱包拥有指定 tokenId
    * 避免在运行时 updateAgentState revert
    */
-  async assertOwnership(tokenId: number): Promise<void> {
+  async assertOwnership(tokenId: bigint): Promise<void> {
     const owner = await this.ownerOf(tokenId);
     if (owner.toLowerCase() !== this.signer.address.toLowerCase()) {
       throw new Error(
-        `Wallet ${this.signer.address} does not own agent #${tokenId} (owner: ${owner})`
+        `Wallet ${this.signer.address} does not own agent #${tokenId.toString()} (owner: ${owner})`
       );
     }
   }

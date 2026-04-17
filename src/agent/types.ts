@@ -58,7 +58,8 @@ export interface DecisionLog {
   createdAt: string;         // ISO 8601
 
   // Agent ID 集成（V2 新增，向后兼容）
-  agentTokenId?: number;          // INFT tokenId
+  // tokenId 在内存中是 bigint（uint256 精度安全）；JSON 序列化时 zgStorage.uploadJson 会自动转 string
+  agentTokenId?: bigint;          // INFT tokenId
   agentContract?: string;         // FXRiskAgentINFT 合约地址
   aiBackend?: BackendKind;        // "doubao" | "0g-compute"
   inferenceVerification?: InferenceVerification;
@@ -70,7 +71,7 @@ export interface DecisionLog {
  */
 export interface AgentSessionSummary {
   agentId: string;
-  agentTokenId: number;
+  agentTokenId: bigint;
   sessionId: string;
   aiBackend: BackendKind;
   processedPairs: string[];

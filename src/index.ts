@@ -72,16 +72,16 @@ async function runAgent() {
   // V2 优先，V1 兼容（老流程还能跑）
   const useV2 = Boolean(oracleV2Address && agentInftAddress && agentTokenIdRaw);
 
-  // 解析 agentTokenId：未设置时用 -1 占位（V1 模式不会使用），设置非法值立即报错避免 uint256 溢出
-  const agentTokenId = (() => {
-    if (agentTokenIdRaw === undefined) return -1;
-    const parsed = Number(agentTokenIdRaw);
-    if (!Number.isInteger(parsed) || parsed < 0) {
+  // 解析 agentTokenId 为 bigint（uint256 全量精度），未设置时 undefined；设置非法值立即报错
+  // 只在 V2 模式下实际使用；V1 模式 undefined 即可
+  const agentTokenId: bigint | undefined = (() => {
+    if (agentTokenIdRaw === undefined || agentTokenIdRaw === "") return undefined;
+    if (!/^\d+$/.test(agentTokenIdRaw)) {
       throw new Error(
-        `Invalid AGENT_TOKEN_ID: "${agentTokenIdRaw}" (must be a non-negative integer)`
+        `Invalid AGENT_TOKEN_ID: "${agentTokenIdRaw}" (must be a non-negative integer string)`
       );
     }
-    return parsed;
+    return BigInt(agentTokenIdRaw);
   })();
 
   const oracleV2Client = useV2
@@ -95,7 +95,7 @@ async function runAgent() {
     : null;
 
   // V2 模式下断言 Agent 所有权
-  if (useV2 && agentRegistry) {
+  if (useV2 && agentRegistry && agentTokenId !== undefined) {
     try {
       await agentRegistry.assertOwnership(agentTokenId);
     } catch (err: any) {
@@ -114,7 +114,7 @@ async function runAgent() {
   console.log(`  Chain     : 0G Galileo (ID: 16602)`);
   console.log(`  Wallet    : ${storageClient.getSignerAddress()}`);
   if (useV2) {
-    console.log(`  Agent ID  : #${agentTokenId} (${agentInftAddress!.slice(0, 10)}...)`);
+    console.log(`  Agent ID  : #${agentTokenId!.toString()} (${agentInftAddress!.slice(0, 10)}...)`);
     console.log(`  Oracle V2 : ${oracleV2Address}`);
   } else {
     console.log(`  Oracle V1 : ${oracleV1Address ?? "(not configured)"}`);
@@ -212,12 +212,13 @@ async function runAgent() {
 
       // Step 5b: 同步镜像到 frontend/data/，供 Dashboard Modal 展示
       // 权威源仍在 0G Storage（rootHash 链上可验），此文件是展示副本
+      // BigInt 不能被 JSON.stringify 原生序列化，用 replacer 统一转 string
       try {
         const mirrorDir = join(process.cwd(), "frontend", "data");
         mkdirSync(mirrorDir, { recursive: true });
         writeFileSync(
           join(mirrorDir, `${rootHash}.json`),
-          JSON.stringify(decisionLog, null, 2)
+          JSON.stringify(decisionLog, (_k, v) => (typeof v === "bigint" ? v.toString() : v), 2)
         );
       } catch (mirrorErr: any) {
         console.warn(`[Mirror] Skipped local mirror: ${mirrorErr.message}`);
@@ -225,7 +226,7 @@ async function runAgent() {
 
       // Step 6: 上链
       let txHash = "-";
-      if (oracleV2Client) {
+      if (oracleV2Client && agentTokenId !== undefined) {
         console.log("[0G] Recording alert on-chain (V2)...");
         txHash = await oracleV2Client.submitAlert(
           pair,
@@ -289,7 +290,7 @@ async function runAgent() {
   console.log(`${"=".repeat(60)}`);
 
   // Step 7: 会话结束后更新 Agent 状态（V2 模式）
-  if (useV2 && agentRegistry && decisionLogRootHashes.length > 0) {
+  if (useV2 && agentRegistry && agentTokenId !== undefined && decisionLogRootHashes.length > 0) {
     try {
       console.log(`\n[Agent] Updating agent state on-chain...`);
       const summary = buildSessionSummary({
@@ -307,7 +308,7 @@ async function runAgent() {
       console.log(`[Agent] State updated: ${stateTxHash}`);
 
       const newCount = await agentRegistry.inferenceCount(agentTokenId);
-      console.log(`[Agent] Total inferences: ${newCount}`);
+      console.log(`[Agent] Total inferences: ${newCount.toString()}`);
     } catch (err: any) {
       console.warn(`[Agent] Failed to update state (non-fatal): ${err.message}`);
     }

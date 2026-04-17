@@ -97,16 +97,17 @@ async function main() {
     rootHash
   );
 
-  // Step 3: 输出
+  // Step 3: 输出（tokenId 是 bigint，toString 保留 uint256 全精度）
+  const tokenIdStr = tokenId.toString();
   console.log("\n[3/3] Mint complete!");
   console.log("=".repeat(60));
-  console.log(`  Token ID    : ${tokenId}`);
+  console.log(`  Token ID    : ${tokenIdStr}`);
   console.log(`  Tx Hash     : ${txHash}`);
   console.log(`  Storage Hash: ${rootHash}`);
   console.log(`  Explorer    : https://chainscan-galileo.0g.ai/tx/${txHash}`);
   console.log("=".repeat(60));
   console.log("\n  Add this to your .env:");
-  console.log(`  AGENT_TOKEN_ID=${tokenId}`);
+  console.log(`  AGENT_TOKEN_ID=${tokenIdStr}`);
   console.log();
 }
 

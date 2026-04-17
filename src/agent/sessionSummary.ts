@@ -7,7 +7,7 @@ import { BackendKind } from "./llm/types";
  */
 export function buildSessionSummary(params: {
   agentId: string;
-  agentTokenId: number;
+  agentTokenId: bigint;
   sessionId: string;
   aiBackend: BackendKind;
   processedPairs: string[];

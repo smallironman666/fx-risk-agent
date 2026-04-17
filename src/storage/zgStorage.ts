@@ -29,7 +29,13 @@ export class ZgStorageClient {
    * @returns root hash（bytes32格式，可直接写入合约）
    */
   async uploadJson<T>(payload: T): Promise<string> {
-    const jsonData = JSON.stringify(payload, null, 2);
+    // BigInt 不能被 JSON.stringify 原生序列化，用 replacer 统一转 string
+    // （tokenId 等 uint256 值在内存是 bigint，存储层的权威序列化在这里统一处理）
+    const jsonData = JSON.stringify(
+      payload,
+      (_key, value) => (typeof value === "bigint" ? value.toString() : value),
+      2
+    );
     const encoder = new TextEncoder();
     const data = encoder.encode(jsonData);
 
