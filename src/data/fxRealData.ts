@@ -1,29 +1,31 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "fs";
 import { join, dirname } from "path";
 import { FXQuote } from "../agent/types";
+import { fetchFromChainlinkDataStreams } from "./chainlinkDataStreams";
 
 /**
- * 真实 FX 数据源（三层 fallback 架构）
+ * 真实 FX 数据源（四层 fallback 架构）
  *
- * 层级设计（参考真实金融系统对数据源的标准做法）：
- *   L1 主源：fawazahmed0 CDN      （jsDelivr，无限制无 key，200+ 币种）
- *   L2 备源：Frankfurter API      （ECB + 40 央行权威数据）
- *   L3 保底：本地缓存 + 告警       （最近一次成功的拉取）
+ * 层级设计（Dragon 2026-04-17 官方确认此架构对 FX 风控场景是"correct choice"）：
+ *   L0 顶源：Chainlink Data Streams（亚秒级事件驱动，条件：设置 API key + feed IDs）
+ *   L1 主源：fawazahmed0 CDN       （jsDelivr，无限制无 key，200+ 币种，日级更新）
+ *   L2 备源：Frankfurter API       （ECB + 40 央行权威数据，日级更新）
+ *   L3 保底：本地缓存 + 告警        （最近一次成功的拉取）
+ *
+ * 降级路径：任一层失败自动下沉。L0 未配置时跳过，直接进 L1。
  *
  * 为何这样分层：
+ *   - L0 是链上可验证的机构级数据（事件驱动，极低延迟）
  *   - L1 是 CDN 静态文件，全球低延迟、高可用
  *   - L2 是 ECB 官方权威源，数据可信度最高（监管合规场景的 fallback）
- *   - L3 保证即便两个外部源全挂，agent 仍能用最近已知数据继续决策（降级可用）
- *
- * 未来升级路径：主网迁移后 L1 切换为 Chainlink Data Streams（秒级推送），
- * Frankfurter 继续作为 L2 合规校验源。
+ *   - L3 保证即便所有外部源全挂，agent 仍能用最近已知数据继续决策
  */
 
 const CACHE_DIR = join(process.cwd(), ".cache");
 const CACHE_PATH = join(CACHE_DIR, "fx-rates.json");
 const FETCH_TIMEOUT_MS = 5_000;
 
-export type RealDataSource = "fawazahmed0" | "frankfurter" | "local-cache";
+export type RealDataSource = "chainlink-ds" | "fawazahmed0" | "frankfurter" | "local-cache";
 
 interface RatesCache {
   /** 以 USD 为基准的汇率表，key 为小写货币代码，如 rates.jpy = 152.5 */
@@ -106,10 +108,23 @@ function saveCache(rates: Record<string, number>, source: RealDataSource): void 
 }
 
 /**
- * 三层 fallback 拉取最新汇率
- * @throws Error 当所有三层都失败时（主 + 备 + 无缓存）
+ * 四层 fallback 拉取最新汇率
+ * L0 Chainlink → L1 fawazahmed0 → L2 Frankfurter → L3 local cache
+ * @throws Error 当所有四层都失败时
  */
 export async function fetchRealRates(): Promise<RealRatesResult> {
+  // L0: Chainlink Data Streams（仅在配置了 API key + feeds 时启用）
+  // 未配置时静默跳过，不污染日志
+  if (process.env.CHAINLINK_API_KEY && process.env.CHAINLINK_FEEDS) {
+    try {
+      const { rates } = await fetchFromChainlinkDataStreams();
+      saveCache(rates, "chainlink-ds");
+      return { rates, source: "chainlink-ds", fetchedAt: Date.now() };
+    } catch (err: any) {
+      console.warn(`[Data] L0 chainlink-ds failed: ${err.message}, falling back to L1`);
+    }
+  }
+
   // L1: fawazahmed0
   try {
     const rates = await fetchFromFawazahmed0();

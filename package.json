@@ -33,6 +33,7 @@
     "@0gfoundation/0g-ts-sdk": "^1.2.1",
     "@0glabs/0g-serving-broker": "^0.7.4",
     "@anthropic-ai/sdk": "^0.87.0",
+    "@chainlink/data-streams-sdk": "^1.2.1",
     "@types/node": "^25.5.2",
     "dotenv": "^17.4.1",
     "ethers": "6.13.1",

@@ -2113,6 +2113,10 @@ function inferDataSourceBadge(log) {
     return null;
   }
   var src = String(log.assessment.quotes[0].source || "");
+  if (src.indexOf("REAL_CHAINLINK-DS") === 0) {
+    return { label: "LIVE · chainlink-ds", cls: "ds-live",
+      title: "L0 · Chainlink Data Streams (sub-second, event-driven, on-chain verifiable)" };
+  }
   if (src.indexOf("REAL_FAWAZAHMED0") === 0) {
     return { label: "LIVE · fawazahmed0", cls: "ds-live",
       title: "L1 · Real FX data from fawazahmed0 jsDelivr CDN" };
