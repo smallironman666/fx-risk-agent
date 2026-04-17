@@ -6,22 +6,38 @@
   <title>FX Risk Agent — Verifiable Risk Cockpit</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Major+Mono+Display&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Geist Mono: 0G 官方 brandkit 指定的等宽字体；保留 JetBrains Mono / Major Mono Display 作为 fallback -->
+  <link href="https://fonts.googleapis.com/css2?family=Major+Mono+Display&family=JetBrains+Mono:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.1/dist/ethers.umd.min.js"></script>
   <style>
     :root {
+      /* ===== Base neutral palette (aligned with 0G brandkit: black/white/gray base) ===== */
       --bg: #0a0c10; --surface: #13161e; --card: #1a1e2a;
-      --border: #252a3a; --text: #e4e7ef; --muted: #6b7280;
+      --border: #252a3a; --text: #e4e7ef; --text-2: #b4bac6; --muted: #6b7280;
+
+      /* ===== Risk level semantic colors (unchanged) ===== */
       --green: #22c55e; --yellow: #eab308; --orange: #f97316; --red: #ef4444;
-      --blue: #3b82f6; --purple: #8b5cf6; --cyan: #06b6d4;
+      --blue: #3b82f6; --cyan: #06b6d4;
+
+      /* ===== 0G brand purple system (0g.ai/brandkit) =====
+         Primary #9200E1 is the core brand color; use --purple-bright for accents/glow
+         on dark backgrounds to maintain contrast. */
+      --purple: #9200E1;
+      --purple-bright: #B75FFF;
+      --purple-soft: #CB8AFF;
+      --purple-pale: #E3C1FF;
+      --purple-glow: rgba(183, 95, 255, .35);
+
+      /* ===== Typography ===== */
       --display: 'Major Mono Display', 'SF Mono', monospace;
-      --tech: 'JetBrains Mono', 'SF Mono', monospace;
+      --tech: 'Geist Mono', 'JetBrains Mono', 'SF Mono', monospace;
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: -apple-system, 'Segoe UI', sans-serif;
       background: var(--bg); color: var(--text);
       min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
     }
     code, .mono { font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace; }
 
@@ -35,7 +51,37 @@
       overflow-x: auto;
     }
     .topbar .logo { font-weight: 700; font-size: 15px; white-space: nowrap; }
-    .topbar .logo span { color: var(--blue); }
+    .topbar .logo span { color: var(--text); }
+
+    /* ===== Brand Band: Powered by 0G (克制版，只用紫色做底线，不做背景装饰) ===== */
+    .brand-band {
+      display: flex; align-items: center; justify-content: center;
+      gap: 10px;
+      padding: 7px 24px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      font-family: var(--tech);
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+    .brand-band .brand-og {
+      font-family: var(--display);
+      font-size: 13px;
+      color: var(--purple-bright);
+      letter-spacing: 0;
+    }
+    .brand-band .brand-text b {
+      color: var(--purple-bright);
+      font-weight: 700;
+    }
+    .brand-band .brand-link {
+      color: var(--text-2);
+      text-decoration: none;
+      transition: color .15s;
+    }
+    .brand-band .brand-link:hover { color: var(--text); }
     .topbar .sep { width: 1px; height: 20px; background: var(--border); flex-shrink: 0; }
     .topbar .item { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
     .topbar .label { color: var(--muted); }
@@ -65,25 +111,29 @@
       transition: border-color .2s;
     }
     .pair-card {
-      transition: border-color .2s, transform .15s, box-shadow .2s;
+      transition: border-color .15s, transform .12s;
     }
     .pair-card:hover {
-      border-color: rgba(139,92,246,.4);
+      border-color: rgba(255,255,255,.12);
       transform: translateY(-1px);
-      box-shadow: 0 4px 16px rgba(0,0,0,.25), 0 0 0 1px rgba(139,92,246,.15);
     }
     .pair-card.active {
-      border-color: var(--cyan);
-      box-shadow: 0 0 0 1px rgba(6,182,212,.3), 0 0 20px rgba(6,182,212,.15);
+      border-color: rgba(255,255,255,.2);
     }
     .pair-card .pair-name {
       font-weight: 700;
       font-size: 13px;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.04em;
       font-family: var(--tech);
     }
-    .pair-card .pair-row { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); }
-    .pair-card .pair-rate { font-family: var(--tech); font-size: 20px; font-weight: 700; margin: 4px 0; }
+    .pair-card .pair-row { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); }
+    .pair-card .pair-rate {
+      font-family: var(--tech);
+      font-variant-numeric: tabular-nums;
+      font-size: 22px; font-weight: 700;
+      letter-spacing: -0.02em;
+      margin: 6px 0;
+    }
     .pair-card .pair-spark svg { display: block; width: 100%; height: 100%; }
     .badge {
       display: inline-block; padding: 1px 8px; border-radius: 3px;
@@ -108,7 +158,7 @@
     .datasource-chip::before {
       content: ""; width: 6px; height: 6px; border-radius: 50%; display: inline-block;
     }
-    .datasource-chip.ds-live::before { background: var(--green); box-shadow: 0 0 6px rgba(34,197,94,.6); }
+    .datasource-chip.ds-live::before { background: var(--green); }
     .datasource-chip.ds-cache::before { background: var(--yellow); }
     .datasource-chip.ds-sim::before { background: var(--muted); }
     .datasource-chip.ds-live {
@@ -169,10 +219,25 @@
       text-transform: uppercase; letter-spacing: 1px;
       margin-bottom: 10px;
     }
-    .stats-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 20px; }
-    .stat { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 14px; }
-    .stat .sl { font-size: 11px; color: var(--muted); margin-bottom: 2px; }
-    .stat .sv { font-size: 22px; font-weight: 700; }
+    .stats-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; margin-bottom: 32px; }
+    .stat {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 8px; padding: 20px 24px;
+      transition: border-color .15s;
+    }
+    .stat:hover { border-color: rgba(255,255,255,.12); }
+    .stat .sl {
+      font-size: 10px; color: var(--muted); font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+    .stat .sv {
+      font-family: var(--tech);
+      font-variant-numeric: tabular-nums;
+      font-size: 44px; font-weight: 800;
+      letter-spacing: -0.03em; line-height: 1;
+      color: var(--text);
+    }
 
     /* ===== Audit Timeline ===== */
     .timeline { position: relative; padding-left: 28px; }
@@ -256,28 +321,10 @@
       position: relative;
       padding: 16px;
       margin-bottom: 20px;
-      border-radius: 12px;
-      background:
-        linear-gradient(180deg, rgba(139,92,246,.08) 0%, rgba(6,182,212,.02) 100%),
-        var(--card);
-      border: 1px solid rgba(139,92,246,.25);
-      overflow: hidden;
-      box-shadow:
-        0 0 24px rgba(139,92,246,.08),
-        inset 0 1px 0 rgba(255,255,255,.03);
-    }
-
-    /* Scanline texture overlay */
-    .agent-passport::before {
-      content: '';
-      position: absolute; inset: 0;
-      background-image: repeating-linear-gradient(
-        0deg,
-        transparent 0, transparent 2px,
-        rgba(139,92,246,.025) 2px, rgba(139,92,246,.025) 3px
-      );
-      pointer-events: none;
-      opacity: 0.6;
+      border-radius: 8px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-left: 2px solid var(--purple-bright);  /* 唯一紫色标识：INFT 身份边 */
     }
 
     .passport-head {
@@ -290,40 +337,34 @@
     }
 
     .sigil {
-      width: 52px; height: 52px;
-      border-radius: 8px;
-      background: linear-gradient(135deg, #1a1e2a 0%, #252a3a 100%);
-      border: 1px solid rgba(139,92,246,.3);
+      width: 48px; height: 48px;
+      border-radius: 6px;
+      background: var(--surface);
+      border: 1px solid var(--border);
       display: flex; align-items: center; justify-content: center;
       flex-shrink: 0;
       overflow: hidden;
-      box-shadow: 0 4px 12px rgba(0,0,0,.3), inset 0 0 8px rgba(139,92,246,.08);
     }
     .sigil svg { width: 100%; height: 100%; display: block; }
 
     .passport-head-meta { flex: 1; min-width: 0; }
     .passport-label {
       font-family: var(--tech);
-      font-size: 9px;
-      color: var(--purple);
-      letter-spacing: 1.5px;
+      font-size: 10px;
+      color: var(--purple-bright);
+      letter-spacing: 0.1em;
       font-weight: 600;
-      margin-bottom: 2px;
-      display: flex; align-items: center; gap: 6px;
-    }
-    .passport-label::after {
-      content: ''; flex: 1; height: 1px;
-      background: linear-gradient(90deg, rgba(139,92,246,.3), transparent);
+      margin-bottom: 4px;
+      text-transform: uppercase;
     }
     .passport-tokenid {
-      font-family: var(--display);
-      font-size: 24px;
-      letter-spacing: -1px;
-      line-height: 1.1;
-      background: linear-gradient(90deg, var(--purple) 0%, var(--cyan) 100%);
-      -webkit-background-clip: text;
-      background-clip: text;
-      -webkit-text-fill-color: transparent;
+      font-family: var(--tech);
+      font-variant-numeric: tabular-nums;
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1;
+      color: var(--text);
     }
 
     .passport-name {
@@ -356,11 +397,10 @@
       border-radius: 3px;
     }
     .status-pulse {
-      width: 5px; height: 5px;
+      width: 6px; height: 6px;
       border-radius: 50%;
       background: var(--green);
-      box-shadow: 0 0 6px var(--green), 0 0 2px var(--green);
-      animation: heartbeat 1.4s ease-in-out infinite;
+      animation: heartbeat 1.8s ease-in-out infinite;
     }
     @keyframes heartbeat {
       0%, 100% { transform: scale(1); opacity: 1; }
@@ -384,37 +424,23 @@
       font-weight: 600;
     }
     .meter-value {
-      font-family: var(--display);
-      font-size: 14px;
-      color: var(--cyan);
-      letter-spacing: -0.5px;
+      font-family: var(--tech);
+      font-variant-numeric: tabular-nums;
+      font-size: 13px; font-weight: 600;
+      color: var(--text);
+      letter-spacing: -0.01em;
     }
     .meter-bar {
-      height: 4px;
-      background: rgba(139,92,246,.12);
+      height: 3px;
+      background: var(--border);
       border-radius: 2px;
       overflow: hidden;
-      position: relative;
     }
     .meter-fill {
       height: 100%;
-      background: linear-gradient(90deg, var(--purple), var(--cyan));
-      box-shadow: 0 0 8px rgba(6,182,212,.5);
+      background: var(--purple-bright);
       border-radius: 2px;
-      transition: width .8s cubic-bezier(.4,0,.2,1);
-      position: relative;
-    }
-    .meter-fill::after {
-      content: '';
-      position: absolute;
-      top: 0; right: 0; bottom: 0;
-      width: 12px;
-      background: linear-gradient(90deg, transparent, rgba(255,255,255,.4), transparent);
-      animation: meter-shimmer 2s ease-in-out infinite;
-    }
-    @keyframes meter-shimmer {
-      0%, 100% { opacity: .6; transform: translateX(0); }
-      50% { opacity: 1; transform: translateX(-4px); }
+      transition: width .6s cubic-bezier(.4,0,.2,1);
     }
 
     /* Info grid */
@@ -449,11 +475,12 @@
       letter-spacing: .2px;
     }
     a.row-val {
-      color: var(--cyan);
+      color: var(--text-2);
       text-decoration: none;
-      transition: color .15s;
+      border-bottom: 1px dotted var(--border);
+      transition: color .15s, border-color .15s;
     }
-    a.row-val:hover { color: var(--purple); }
+    a.row-val:hover { color: var(--text); border-bottom-color: var(--text-2); }
 
     /* =================================================
        V2 TIMELINE — Agent Badge Pills
@@ -464,7 +491,7 @@
     }
     .tl-card.v2 {
       background:
-        linear-gradient(90deg, rgba(139,92,246,.04) 0%, transparent 40%),
+        linear-gradient(90deg, rgba(183,95,255,.04) 0%, transparent 40%),
         var(--card);
       border-left: 2px solid transparent;
       padding-left: 14px;
@@ -473,8 +500,8 @@
       content: '';
       position: absolute;
       left: -1px; top: -1px; bottom: -1px;
-      width: 3px;
-      background: linear-gradient(180deg, var(--purple), var(--cyan));
+      width: 2px;
+      background: var(--purple-bright);
       border-radius: 8px 0 0 8px;
     }
     .tl-card.v1 {
@@ -485,54 +512,51 @@
       opacity: 1;
     }
 
-    /* Agent chip with sigil dot */
+    /* Agent chip — 中性灰徽章，INFT 身份由 tl-card.v2 左紫边承载 */
     .agent-chip {
       display: inline-flex;
       align-items: center;
       gap: 5px;
-      padding: 2px 9px 2px 4px;
-      border-radius: 999px;
-      background: linear-gradient(90deg, rgba(139,92,246,.18), rgba(139,92,246,.08));
-      border: 1px solid rgba(139,92,246,.35);
+      padding: 2px 8px 2px 5px;
+      border-radius: 3px;
+      background: rgba(255,255,255,.04);
+      border: 1px solid var(--border);
       font-family: var(--tech);
       font-size: 10px;
-      color: #c7b9fb;
+      color: var(--text-2);
       font-weight: 600;
+      letter-spacing: 0.04em;
       margin-left: 8px;
-      transition: all .15s;
+      transition: border-color .15s;
     }
-    .agent-chip:hover {
-      background: linear-gradient(90deg, rgba(139,92,246,.28), rgba(139,92,246,.15));
-      transform: translateY(-1px);
-      box-shadow: 0 2px 8px rgba(139,92,246,.2);
-    }
+    .agent-chip:hover { border-color: rgba(255,255,255,.15); }
     .agent-chip-dot {
-      width: 10px; height: 10px;
+      width: 6px; height: 6px;
       border-radius: 50%;
-      background: linear-gradient(135deg, var(--purple), var(--cyan));
-      box-shadow: 0 0 4px rgba(139,92,246,.6);
+      background: var(--purple-bright);
       flex-shrink: 0;
     }
 
-    /* Backend chip */
+    /* Backend chip — 中性 */
     .backend-chip {
       display: inline-flex;
       align-items: center;
       gap: 4px;
       padding: 2px 8px;
-      border-radius: 999px;
-      background: rgba(6,182,212,.1);
-      border: 1px solid rgba(6,182,212,.3);
+      border-radius: 3px;
+      background: rgba(255,255,255,.04);
+      border: 1px solid var(--border);
       font-family: var(--tech);
       font-size: 10px;
-      color: #67e3f3;
+      color: var(--text-2);
       font-weight: 500;
+      letter-spacing: 0.04em;
       margin-left: 5px;
     }
     .backend-chip.tee {
       color: var(--green);
-      background: rgba(34,197,94,.1);
-      border-color: rgba(34,197,94,.3);
+      border-color: rgba(34,197,94,.25);
+      background: rgba(34,197,94,.06);
     }
     .backend-chip-icon {
       font-size: 10px;
@@ -559,15 +583,16 @@
     .topbar #topContract {
       font-family: var(--tech);
       font-size: 12px;
-      color: var(--cyan);
+      color: var(--text);
     }
     .topbar #topAlertCount {
       font-family: var(--tech);
       font-size: 12px;
+      color: var(--text);
     }
     .topbar #agentStatus {
       font-family: var(--tech);
-      color: var(--purple);
+      color: var(--text);
       font-weight: 600;
     }
 
@@ -606,7 +631,9 @@
     }
     .modal-title .badge {
       font-size: 10px; padding: 2px 8px; border-radius: 3px;
-      background: var(--blue); color: #fff; font-weight: 500;
+      background: linear-gradient(135deg, var(--purple), var(--purple-bright));
+      color: #fff; font-weight: 500;
+      box-shadow: 0 0 8px var(--purple-glow);
     }
     .modal-close {
       background: none; border: none; color: var(--muted);
@@ -649,7 +676,7 @@
       color: var(--red);
     }
     .modal-hash {
-      font-family: var(--tech); font-size: 11px; color: var(--cyan);
+      font-family: var(--tech); font-size: 11px; color: var(--text-2);
       word-break: break-all;
     }
     .modal-footer {
@@ -662,10 +689,25 @@
       background: var(--surface); color: var(--text);
       border: 1px solid var(--border);
     }
-    .modal-btn.primary { background: var(--blue); color: #fff; border-color: var(--blue); }
+    .modal-btn.primary {
+      background: linear-gradient(135deg, var(--purple), var(--purple-bright));
+      color: #fff; border-color: var(--purple);
+      box-shadow: 0 0 0 1px rgba(183,95,255,.15), 0 2px 8px rgba(146,0,225,.3);
+    }
+    .modal-btn.primary:hover {
+      background: linear-gradient(135deg, var(--purple-bright), var(--purple));
+      box-shadow: 0 0 0 1px rgba(183,95,255,.3), 0 4px 14px rgba(146,0,225,.5);
+    }
   </style>
 </head>
 <body>
+
+<!-- ===== Brand Band: Powered by 0G ===== -->
+<div class="brand-band">
+  <span class="brand-og">Ø</span>
+  <span class="brand-text">Built on <b>0G</b> · Decentralized AI Operating System</span>
+  <a class="brand-link" href="https://0g.ai" target="_blank" rel="noopener">0g.ai &rsaquo;</a>
+</div>
 
 <!-- ===== Top Status Bar ===== -->
 <div class="topbar">
@@ -1156,13 +1198,16 @@ function showAIDetail(alert) {
   c3.appendChild(el("div", "ai-value", f6(alert.threshold)));
   panel.appendChild(c3);
 
-  // Reporter
+  // Reporter — 中间省略号截断，不折行
   var c4 = el("div", "ai-card");
   c4.appendChild(el("div", "ai-label", "Reporter (Agent Wallet)"));
   var addr = el("div", "ai-value mono");
-  addr.style.fontSize = "12px";
-  addr.style.wordBreak = "break-all";
-  addr.textContent = alert.reporter;
+  addr.style.cssText = "font-size:12px;font-family:var(--tech);color:var(--text);letter-spacing:0";
+  var full = alert.reporter || "";
+  addr.textContent = full.length > 16
+    ? full.slice(0, 8) + "…" + full.slice(-6)
+    : full;
+  addr.title = full;
   c4.appendChild(addr);
   panel.appendChild(c4);
 
@@ -1170,7 +1215,7 @@ function showAIDetail(alert) {
   var c5 = el("div", "ai-card");
   c5.appendChild(el("div", "ai-label", "0G Storage Root Hash"));
   var hashLink = el("span", "ai-value mono");
-  hashLink.style.cssText = "font-size:11px;word-break:break-all;color:var(--cyan);display:block;cursor:pointer";
+  hashLink.style.cssText = "font-size:11px;word-break:break-all;color:var(--text-2);display:block;cursor:pointer;font-family:var(--tech)";
   hashLink.textContent = alert.storageRootHash;
   hashLink.title = "Click to view full AI decision";
   hashLink.addEventListener("click", function() { openDecisionModal(alert.storageRootHash); });
@@ -1181,14 +1226,16 @@ function showAIDetail(alert) {
   var btnRow = el("div", "");
   btnRow.style.cssText = "margin-top:8px;display:flex;gap:8px;flex-wrap:wrap";
 
+  // View AI Decision — 主 CTA：0G 紫色渐变（skill 允许：主操作焦点）
   var viewBtn = el("button", "");
-  viewBtn.style.cssText = "font-size:12px;padding:4px 12px;background:var(--blue);color:#fff;border:none;border-radius:4px;cursor:pointer;display:inline-block;font-family:inherit";
+  viewBtn.style.cssText = "font-size:12px;padding:6px 14px;background:linear-gradient(135deg,var(--purple),var(--purple-bright));color:#fff;border:none;border-radius:4px;cursor:pointer;display:inline-block;font-family:inherit;font-weight:500";
   viewBtn.textContent = "View AI Decision";
   viewBtn.addEventListener("click", function() { openDecisionModal(alert.storageRootHash); });
   btnRow.appendChild(viewBtn);
 
+  // Download Original — 次级按钮：中性边框（不抢主 CTA 焦点）
   var dlBtn = el("a", "");
-  dlBtn.style.cssText = "font-size:12px;padding:4px 12px;background:var(--green);color:#fff;border-radius:4px;text-decoration:none;display:inline-block";
+  dlBtn.style.cssText = "font-size:12px;padding:6px 14px;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:4px;text-decoration:none;display:inline-block;font-family:inherit";
   dlBtn.textContent = "Download Original";
   dlBtn.href = "https://indexer-storage-testnet-turbo.0g.ai/file?root=" + alert.storageRootHash;
   dlBtn.target = "_blank";
@@ -1377,11 +1424,11 @@ function generateSigil(tokenId) {
     '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">' +
       '<defs>' +
         '<linearGradient id="sgrad' + tid + '" x1="0%" y1="0%" x2="100%" y2="100%">' +
-          '<stop offset="0%" stop-color="#8b5cf6"/>' +
+          '<stop offset="0%" stop-color="#B75FFF"/>' +
           '<stop offset="100%" stop-color="#06b6d4"/>' +
         '</linearGradient>' +
         '<radialGradient id="srad' + tid + '" cx="50%" cy="50%" r="50%">' +
-          '<stop offset="0%" stop-color="rgba(139,92,246,0.3)"/>' +
+          '<stop offset="0%" stop-color="rgba(183,95,255,0.3)"/>' +
           '<stop offset="100%" stop-color="rgba(6,182,212,0)"/>' +
         '</radialGradient>' +
       '</defs>' +
@@ -1392,7 +1439,7 @@ function generateSigil(tokenId) {
       // 外圈虚线环（旋转）
       '<circle cx="24" cy="24" r="20" stroke="url(#sgrad' + tid + ')" stroke-width="1" fill="none" stroke-dasharray="3 3" opacity="0.4" transform="rotate(' + angle + ' 24 24)"/>' +
       // 中圈
-      '<circle cx="24" cy="24" r="14" stroke="#8b5cf6" stroke-width="1" fill="none" stroke-dasharray="5 2" opacity="0.7" transform="rotate(' + (-angle) + ' 24 24)"/>' +
+      '<circle cx="24" cy="24" r="14" stroke="#B75FFF" stroke-width="1" fill="none" stroke-dasharray="5 2" opacity="0.7" transform="rotate(' + (-angle) + ' 24 24)"/>' +
       // 内实心
       '<circle cx="24" cy="24" r="9" fill="url(#sgrad' + tid + ')" opacity="0.9"/>' +
       // 中心点
@@ -1448,9 +1495,8 @@ function renderAgentCard(info) {
     }
   }
 
-  // Token ID
-  var paddedId = String(AGENT_TOKEN_ID).padStart(4, "0");
-  if (tokenIdEl) tokenIdEl.textContent = paddedId;
+  // Token ID — 原值显示（不做前导 0 填充，避免 Token #0 读作 #0000）
+  if (tokenIdEl) tokenIdEl.textContent = String(AGENT_TOKEN_ID);
 
   // 名字
   if (nameEl) nameEl.textContent = info.name;
