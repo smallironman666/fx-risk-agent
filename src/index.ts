@@ -7,6 +7,7 @@ import { createLLMBackend } from "./agent/llm/factory";
 import { DecisionLog, RiskLevel } from "./agent/types";
 import { buildSessionSummary } from "./agent/sessionSummary";
 import { generateHistoricalQuotes, RISK_THRESHOLDS } from "./data/fxSimulator";
+import { generateRealHistoricalQuotes } from "./data/fxRealData";
 import { ZgStorageClient } from "./storage/zgStorage";
 import { RiskOracleClient } from "./chain/riskOracle";
 import { RiskOracleV2Client } from "./chain/riskOracleV2";
@@ -21,7 +22,7 @@ const AGENT_ID = "fx-risk-agent-v0.2";
 function parseArgs() {
   const args = process.argv.slice(2);
   let pair: string | undefined;
-  let scenario: "normal" | "volatile" | "crisis" | undefined;
+  let scenario: "normal" | "volatile" | "crisis" | "real" | undefined;
 
   for (let i = 0; i < args.length; i++) {
     if (args[i] === "--pair" && args[i + 1]) pair = args[++i];
@@ -148,11 +149,23 @@ async function runAgent() {
 
     try {
       // Step 1: 获取行情数据
+      // real 场景走三层 fallback 真实数据源（L1 fawazahmed0 → L2 frankfurter → L3 local cache）
+      // 其他场景保留 simulator，用于 crisis 压力测试/demo 极端情境
       const scenarios = ["normal", "normal", "volatile", "crisis"] as const;
       const scenario = cliArgs.scenario || scenarios[Math.floor(Math.random() * scenarios.length)];
       console.log(`[Data] ${scenario} scenario, 20 data points`);
 
-      const quotes = generateHistoricalQuotes(pair, 20, 60_000, scenario);
+      let quotes;
+      if (scenario === "real") {
+        const realResult = await generateRealHistoricalQuotes(pair, 20, 60_000);
+        quotes = realResult.quotes;
+        const ageNote = realResult.cacheAgeHours !== undefined
+          ? ` (cache age: ${realResult.cacheAgeHours.toFixed(1)}h)`
+          : "";
+        console.log(`[Data] Real source: ${realResult.source}${ageNote}`);
+      } else {
+        quotes = generateHistoricalQuotes(pair, 20, 60_000, scenario);
+      }
       const latestRate = quotes[quotes.length - 1].mid;
       console.log(`[Data] Latest rate: ${latestRate}`);
 
