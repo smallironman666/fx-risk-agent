@@ -20,6 +20,8 @@
 
 ## Live Demo
 
+[![FX Risk Agent Dashboard](docs/assets/dashboard-preview.jpg)](https://smallironman666.github.io/fx-risk-agent/)
+
 - **Dashboard**: https://smallironman666.github.io/fx-risk-agent/ *(static site, fetches data directly from 0G Storage)*
 - **Demo Video**: [Watch on YouTube (2:37)](https://youtu.be/j2eaoJN18a8)
 
