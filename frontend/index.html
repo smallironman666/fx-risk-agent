@@ -1604,8 +1604,8 @@ function attachDataSourceBadge(leftContainer, rootHash) {
       return;
     }
     var chip = el("span", "datasource-chip " + badge.cls, badge.label);
-    chip.setAttribute("data-tip", badge.title); // 自定义 CSS tooltip
-    chip.title = badge.title;                    // 原生 title 兜底（a11y）
+    chip.setAttribute("data-tip", badge.title);    // CSS tooltip（视觉）
+    chip.setAttribute("aria-label", badge.title);  // a11y（不会被浏览器双重渲染）
     leftContainer.replaceChild(chip, placeholder);
   });
 }
