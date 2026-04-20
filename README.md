@@ -16,6 +16,9 @@
   <a href="https://chainscan-galileo.0g.ai/address/0x2abde2687923ffb9a5be4c6df3aac68a4f0a93ca">
     <img src="https://img.shields.io/badge/🔗_View-On_Chain-green?style=for-the-badge" alt="On-Chain" />
   </a>
+  <a href="https://github.com/smallironman666/fx-risk-agent/actions/workflows/ci.yml">
+    <img src="https://github.com/smallironman666/fx-risk-agent/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI" />
+  </a>
 </p>
 
 ## Live Demo
