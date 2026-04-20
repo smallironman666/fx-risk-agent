@@ -183,9 +183,10 @@ import { buildSessionSummary } from "../../src/agent/sessionSummary";
 console.log("\nsessionSummary");
 
 test("构建 session summary 含所有字段", () => {
+  // tokenId 使用 bigint 保持 uint256 全精度（参考 agentRegistry / index.ts 的类型约定）
   const summary = buildSessionSummary({
     agentId: "fx-risk-agent-v0.2",
-    agentTokenId: 0,
+    agentTokenId: 0n,
     sessionId: "abc-123",
     aiBackend: "doubao",
     processedPairs: ["USD/CNY", "EUR/USD"],
@@ -193,7 +194,7 @@ test("构建 session summary 含所有字段", () => {
   });
 
   assert.strictEqual(summary.agentId, "fx-risk-agent-v0.2");
-  assert.strictEqual(summary.agentTokenId, 0);
+  assert.strictEqual(summary.agentTokenId, 0n);
   assert.strictEqual(summary.sessionId, "abc-123");
   assert.strictEqual(summary.aiBackend, "doubao");
   assert.deepStrictEqual(summary.processedPairs, ["USD/CNY", "EUR/USD"]);
@@ -205,7 +206,7 @@ test("构建 session summary 含所有字段", () => {
 test("alertCount 等于 rootHashes 数量", () => {
   const summary = buildSessionSummary({
     agentId: "x",
-    agentTokenId: 0,
+    agentTokenId: 0n,
     sessionId: "s1",
     aiBackend: "0g-compute",
     processedPairs: ["USD/CNY", "EUR/USD", "GBP/USD"],
