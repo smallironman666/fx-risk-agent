@@ -68,11 +68,22 @@ flowchart LR
 2. **Structured audit trail** — Every decision (including "no risk" judgments) is permanently stored with full reasoning on 0G Storage.
 3. **On-chain proof** — Risk alerts recorded on-chain with Storage rootHash. Anyone can verify: chain record → fetch full AI decision log from 0G Storage → check reasoning.
 
+## Key Features
+
+- **Real FX Data (4-tier fallback)** — L0 Chainlink Data Streams (sub-second, event-driven, pending API access) → L1 fawazahmed0 CDN (daily, live) → L2 Frankfurter / ECB (daily, live) → L3 local cache. Dragon (0G APAC DevRel Lead) confirmed Data Streams is "the correct choice for this event-driven FX risk scenario."
+- **18 Currency Pairs** monitored — G10 majors (EUR/USD, GBP/USD, USD/JPY, AUD/USD, USD/CAD, USD/CHF) + APAC corridors (USD/CNY, USD/HKD, USD/SGD, USD/KRW, USD/INR, USD/MYR, USD/PHP, USD/THB, USD/IDR, USD/TWD, USD/VND) + Americas (USD/MXN). Covers the major cross-border payment corridors.
+- **Historical Replay + Risk Heatmap** — Time-machine slider lets auditors rewind to any moment. Risk Map view visualizes all 18 pairs' risk level simultaneously. Auto-play mode animates the risk landscape over time. Aligned with EU AI Act Article 12 "replayable decisions" requirement.
+- **Data source badges** — every alert card lazily displays its FX data provenance (LIVE · fawazahmed0 / ECB / cached / SIMULATED), loaded from 0G Storage rather than a centralized API.
+
 ## Architecture
 
 ```mermaid
 flowchart TD
-    A["FX Market Data"] --> B["AI Risk Analyzer<br/>(Dual Backend)"]
+    A0["L0 Chainlink Data Streams<br/>(pending API)"] --> A
+    A1["L1 fawazahmed0 CDN<br/>(live, daily)"] --> A
+    A2["L2 Frankfurter / ECB<br/>(live, daily)"] --> A
+    A3["L3 local cache<br/>(defensive)"] --> A
+    A["Real FX Data<br/>(4-tier fallback)"] --> B["AI Risk Analyzer<br/>(Dual Backend)"]
     B --> B1["Doubao Seed 2.0 Pro<br/>(primary)"]
     B --> B2["0G Compute<br/>Qwen 2.5 7B + TEE<br/>(production path)"]
     B1 --> C{"Risk Assessment"}
@@ -84,6 +95,10 @@ flowchart TD
     F -.->|"CORS *, browser fetch"| H["Dashboard<br/>(static HTML on GitHub Pages)"]
     E -.->|"/file?root=<hash>"| H
 
+    style A0 fill:#ede7f6,stroke:#5e35b1
+    style A1 fill:#e3f2fd,stroke:#1565c0
+    style A2 fill:#e3f2fd,stroke:#1565c0
+    style A3 fill:#eceff1,stroke:#546e7a
     style A fill:#e3f2fd,stroke:#1565c0
     style B fill:#fff8e1,stroke:#f9a825
     style D fill:#fce4ec,stroke:#c62828
@@ -229,9 +244,12 @@ npx ts-node src/tools/fetchLog.ts 0xfec46db02f1313e3b0e6c9833985ae83387f9eeb0f91
 - [x] Dashboard with direct-from-0G-Storage decision log viewer
 - [x] Webhook alerting for HIGH/CRITICAL events
 - [x] CLI tool to fetch full AI decision log by rootHash
-- [ ] INFT `tokenURI` — wallet/explorer-renderable Agent metadata
-- [ ] Historical Replay Mode (archived decision timeline)
-- [ ] Real FX data feed (Alpha Vantage / Twelve Data)
+- [x] **Real FX data feed (3-tier live + L0 Chainlink ready)** — fawazahmed0 CDN + Frankfurter/ECB + local cache; L0 Chainlink Data Streams integrated at the code level, awaiting API credentials
+- [x] **18 currency pairs** covering major cross-border payment corridors (G10 + APAC + LATAM)
+- [x] **Historical Replay + Risk Heatmap** — Time-machine slider, risk landscape view across all pairs, auto-play mode (EU AI Act Article 12 alignment)
+- [ ] INFT `tokenURI` — wallet/explorer-renderable Agent metadata (scheduled with mainnet migration)
+- [ ] Mainnet migration to 0G Aristotle (Chain ID 16661)
+- [ ] Activate L0 Chainlink Data Streams once API access is granted
 - [ ] Mainnet deployment (0G Aristotle, Chain ID 16661)
 - [ ] Multi-agent collaboration per currency corridor
 
