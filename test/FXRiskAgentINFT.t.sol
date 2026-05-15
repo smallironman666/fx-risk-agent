@@ -147,4 +147,39 @@ contract FXRiskAgentINFTTest is Test {
         );
         agentInft.mintAgent(creator, "Agent2", "v1", "fx", META_HASH);
     }
+
+    // ============ tokenURI (on-chain SVG + JSON) ============
+
+    function test_tokenURI_revertsForNonExistentToken() public {
+        vm.expectRevert("Agent does not exist");
+        agentInft.tokenURI(999);
+    }
+
+    function test_tokenURI_returnsBase64DataUri() public {
+        uint256 tokenId = agentInft.mintAgent(creator, "FX Risk Agent", "v0.2.0", "inference", META_HASH);
+        string memory uri = agentInft.tokenURI(tokenId);
+
+        // 必须是 data:application/json;base64, 前缀
+        bytes memory uriBytes = bytes(uri);
+        bytes memory expectedPrefix = bytes("data:application/json;base64,");
+        assertGt(uriBytes.length, expectedPrefix.length, "uri should be longer than prefix");
+        for (uint256 i = 0; i < expectedPrefix.length; i++) {
+            assertEq(uriBytes[i], expectedPrefix[i], "tokenURI should start with data uri prefix");
+        }
+    }
+
+    function test_tokenURI_changesAfterInference() public {
+        // 动态 SVG：推理次数改变 → tokenURI 不同（"Memory as Asset" 叙事核心）
+        uint256 tokenId = agentInft.mintAgent(creator, "Agent", "v1", "fx", META_HASH);
+        string memory uriBefore = agentInft.tokenURI(tokenId);
+
+        vm.prank(creator);
+        agentInft.updateAgentState(tokenId, bytes32(uint256(0xBEEF)));
+
+        string memory uriAfter = agentInft.tokenURI(tokenId);
+        assertTrue(
+            keccak256(bytes(uriBefore)) != keccak256(bytes(uriAfter)),
+            "tokenURI should change after inference (dynamic metadata)"
+        );
+    }
 }

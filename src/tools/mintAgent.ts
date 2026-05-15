@@ -3,6 +3,7 @@ dotenv.config();
 
 import { createHash } from "crypto";
 import { AgentRegistryClient } from "../chain/agentRegistry";
+import { explorerTx } from "../chain/explorer";
 import { ZgStorageClient } from "../storage/zgStorage";
 
 /**
@@ -77,8 +78,8 @@ async function main() {
     creator: storage.getSignerAddress(),
     systemPromptSha256: promptHash,
     chain: {
-      name: "0G Galileo Testnet",
-      chainId: 16602,
+      name: process.env.OG_CHAIN_ID === "16661" ? "0G Aristotle Mainnet" : "0G Galileo Testnet",
+      chainId: Number(process.env.OG_CHAIN_ID || "16602"),
       rpc: rpcUrl,
     },
     createdAt: new Date().toISOString(),
@@ -104,7 +105,7 @@ async function main() {
   console.log(`  Token ID    : ${tokenIdStr}`);
   console.log(`  Tx Hash     : ${txHash}`);
   console.log(`  Storage Hash: ${rootHash}`);
-  console.log(`  Explorer    : https://chainscan-galileo.0g.ai/tx/${txHash}`);
+  console.log(`  Explorer    : ${explorerTx(txHash)}`);
   console.log("=".repeat(60));
   console.log("\n  Add this to your .env:");
   console.log(`  AGENT_TOKEN_ID=${tokenIdStr}`);

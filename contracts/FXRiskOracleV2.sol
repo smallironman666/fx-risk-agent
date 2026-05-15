@@ -41,14 +41,18 @@ contract FXRiskOracleV2 {
     /// @notice 每个 AgentID 产生的 alert 数量
     mapping(uint256 => uint256) public alertCountByAgent;
 
+    /// @notice Alert 上链事件
+    /// @dev 包含完整 alert 字段，让 indexer / Dashboard 不必再做额外 storage 读取
     event AlertCreated(
         uint256 indexed alertId,
         string  currencyPair,
         RiskLevel level,
         uint256 spotRate,
+        uint256 threshold,           // V2.1 新增：触发阈值，方便 indexer 直接显示
         bytes32 storageRootHash,
         uint256 timestamp,
         uint256 indexed agentTokenId,
+        address indexed reporter,    // V2.1 新增：indexed 报告人，便于按 wallet 过滤
         string  aiBackend
     );
 
@@ -105,9 +109,11 @@ contract FXRiskOracleV2 {
             currencyPair,
             level,
             spotRate,
+            threshold,
             storageRootHash,
             block.timestamp,
             agentTokenId,
+            msg.sender,
             aiBackend
         );
     }

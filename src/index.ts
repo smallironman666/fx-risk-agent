@@ -12,6 +12,7 @@ import { ZgStorageClient } from "./storage/zgStorage";
 import { RiskOracleClient } from "./chain/riskOracle";
 import { RiskOracleV2Client } from "./chain/riskOracleV2";
 import { AgentRegistryClient } from "./chain/agentRegistry";
+import { explorerAddress } from "./chain/explorer";
 import { randomUUID } from "crypto";
 import { writeFileSync, mkdirSync } from "fs";
 import { join } from "path";
@@ -111,7 +112,7 @@ async function runAgent() {
   console.log("=".repeat(60));
   console.log(`  Backend   : ${llmBackend.kind}`);
   console.log(`  Model     : ${modelName}`);
-  console.log(`  Chain     : 0G Galileo (ID: 16602)`);
+  console.log(`  Chain     : ${process.env.OG_CHAIN_ID === "16661" ? "0G Aristotle Mainnet" : "0G Galileo Testnet"} (ID: ${process.env.OG_CHAIN_ID})`);
   console.log(`  Wallet    : ${storageClient.getSignerAddress()}`);
   if (useV2) {
     console.log(`  Agent ID  : #${agentTokenId!.toString()} (${agentInftAddress!.slice(0, 10)}...)`);
@@ -326,7 +327,7 @@ async function runAgent() {
       console.log(`  V1 Alerts: ${countV1} | Contract: ${oracleV1Address}`);
     } catch {}
   }
-  console.log(`  Explorer  : https://chainscan-galileo.0g.ai/address/${oracleV2Address ?? oracleV1Address}`);
+  console.log(`  Explorer  : ${explorerAddress((oracleV2Address ?? oracleV1Address)!)}`);
 
   console.log(`\n  Session complete.\n`);
 }

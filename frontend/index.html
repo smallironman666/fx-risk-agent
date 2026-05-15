@@ -1044,12 +1044,15 @@
 </div>
 
 <script>
-var CONTRACT_V1 = "0x12030bc39dd18E2e8e4F10e685b7B7E639F0925A";
-var CONTRACT_V2 = "0x2abde2687923ffb9a5be4c6df3aac68a4f0a93ca";
-var AGENT_INFT = "0xAA540f42f0d20588f183E3B92B3b617991fa22D1";
+// === 0G Aristotle Mainnet (V2.1) — hackathon 提交配置 ===
+var CONTRACT_V2 = "0x260Ae577f1F8b6c8ADA670ca9480bA8f604b8b01";
+var AGENT_INFT = "0x12030bc39dd18E2e8e4F10e685b7B7E639F0925A";
 var AGENT_TOKEN_ID = 0;
-var RPC_URL = "https://evmrpc-testnet.0g.ai";
-var EXPLORER = "https://chainscan-galileo.0g.ai";
+var RPC_URL = "https://evmrpc.0g.ai";
+var EXPLORER = "https://chainscan.0g.ai";
+// 主网无 V1 部署；用 zero address 占位让 ethers Contract 构造不抛错，
+// allSettled 会把 V1 调用 fail 掉，dashboard 自动只显示 V2 + Agent 数据。
+var CONTRACT_V1 = "0x0000000000000000000000000000000000000000";
 
 // 保留 V1 变量名以兼容旧代码
 var CONTRACT_ADDRESS = CONTRACT_V2;
@@ -1645,7 +1648,7 @@ function buildTimelineItem(a) {
     var storageLabel = document.createTextNode("Storage: ");
     hashes.appendChild(storageLabel);
     var storageLink = el("a", "", a.storageRootHash.slice(0, 22) + "...");
-    storageLink.href = "https://indexer-storage-testnet-turbo.0g.ai/file?root=" + a.storageRootHash;
+    storageLink.href = "https://indexer-storage-turbo.0g.ai/file?root=" + a.storageRootHash;
     storageLink.target = "_blank";
     hashes.appendChild(storageLink);
 
@@ -1733,7 +1736,7 @@ function showAIDetail(alert) {
   var dlBtn = el("a", "");
   dlBtn.style.cssText = "font-size:12px;padding:6px 14px;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:4px;text-decoration:none;display:inline-block;font-family:inherit";
   dlBtn.textContent = "Download Original";
-  dlBtn.href = "https://indexer-storage-testnet-turbo.0g.ai/file?root=" + alert.storageRootHash;
+  dlBtn.href = "https://indexer-storage-turbo.0g.ai/file?root=" + alert.storageRootHash;
   dlBtn.target = "_blank";
   btnRow.appendChild(dlBtn);
 
@@ -2064,7 +2067,7 @@ function modalHashBox(text) {
   return h;
 }
 
-var OG_INDEXER = "https://indexer-storage-testnet-turbo.0g.ai";
+var OG_INDEXER = "https://indexer-storage-turbo.0g.ai";
 
 // DecisionLog 缓存：rootHash -> 完整 JSON，供 Modal + 卡片徽章共用，避免重复拉
 var decisionLogCache = new Map();

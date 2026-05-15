@@ -117,15 +117,19 @@ contract FXRiskOracleV2Test is Test {
     }
 
     function test_submitAlert_emitsEventWithAllFields() public {
-        vm.expectEmit(true, true, false, true);
+        // AlertCreated v2.1：alertId / agentTokenId / reporter 三个 indexed，
+        // 数据字段含 threshold（V2.1 新增）+ reporter（V2.1 indexed）。
+        vm.expectEmit(true, true, true, true);
         emit FXRiskOracleV2.AlertCreated(
             0,
             "USD/CNY",
             FXRiskOracleV2.RiskLevel.HIGH,
             7_250_000,
+            7_350_000,
             ROOT_HASH_1,
             block.timestamp,
             0,
+            reporter,
             "doubao"
         );
 

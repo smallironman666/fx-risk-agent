@@ -4,6 +4,8 @@ pragma solidity ^0.8.24;
 import "openzeppelin-contracts/contracts/token/ERC721/ERC721.sol";
 import "openzeppelin-contracts/contracts/access/Ownable.sol";
 import "openzeppelin-contracts/contracts/utils/ReentrancyGuard.sol";
+import "openzeppelin-contracts/contracts/utils/Base64.sol";
+import "openzeppelin-contracts/contracts/utils/Strings.sol";
 
 /**
  * @title FXRiskAgentINFT
@@ -131,5 +133,78 @@ contract FXRiskAgentINFT is ERC721, Ownable, ReentrancyGuard {
      */
     function totalSupply() external view returns (uint256) {
         return _nextTokenId;
+    }
+
+    /**
+     * @notice 链上生成 token metadata（data URI 形式，钱包/Chainscan 可直接渲染）
+     * @dev 包含动态 SVG（按 inferenceCount 变化）+ JSON traits。无依赖外部 IPFS。
+     *      "Memory as Asset" 叙事：转让 INFT = 转让该 Agent 的全部链上推理历史。
+     *      内部拆 _buildJsonHead / _buildJsonTraits 避免 stack-too-deep。
+     */
+    function tokenURI(uint256 tokenId) public view override returns (string memory) {
+        require(_ownerOf(tokenId) != address(0), "Agent does not exist");
+
+        bytes memory json = abi.encodePacked(
+            _buildJsonHead(tokenId),
+            _buildJsonTraits(tokenId)
+        );
+
+        return string(abi.encodePacked("data:application/json;base64,", Base64.encode(json)));
+    }
+
+    /// @dev JSON 头部：name + description + image，访存 agentMetadata 和 inferenceCount
+    function _buildJsonHead(uint256 tokenId) internal view returns (string memory) {
+        AgentMetadata memory meta = agentMetadata[tokenId];
+        string memory svg = _renderSigil(tokenId, inferenceCount[tokenId]);
+        return string(
+            abi.encodePacked(
+                '{"name":"', meta.agentName, ' #', Strings.toString(tokenId),
+                '","description":"Verifiable AI Agent for FX risk monitoring on 0G Network. Every inference is permanently archived on 0G Storage and recorded on 0G Chain. Transfer of this INFT transfers the full audit trail.",',
+                '"image":"data:image/svg+xml;base64,', Base64.encode(bytes(svg)), '",'
+            )
+        );
+    }
+
+    /// @dev JSON traits 数组 + 闭合，单独抽出限制本函数 stack 深度
+    function _buildJsonTraits(uint256 tokenId) internal view returns (string memory) {
+        AgentMetadata memory meta = agentMetadata[tokenId];
+        return string(
+            abi.encodePacked(
+                '"attributes":[',
+                    '{"trait_type":"Version","value":"', meta.version, '"},',
+                    '{"trait_type":"Model Type","value":"', meta.modelType, '"},',
+                    '{"trait_type":"Total Inferences","value":', Strings.toString(inferenceCount[tokenId]), '},',
+                    '{"trait_type":"Created At","display_type":"date","value":', Strings.toString(meta.createdAt), '},',
+                    '{"trait_type":"Last Update","display_type":"date","value":', Strings.toString(lastUpdatedAt[tokenId]), '},',
+                    '{"trait_type":"Standard","value":"ERC-7857 Inspired INFT"}',
+                ']}'
+            )
+        );
+    }
+
+    /**
+     * @notice 渲染 Agent 的 sigil（链上 SVG）
+     * @dev 设计：0G 紫色品牌 + 单色极简 + tokenId 大字 + 推理次数随时间递增
+     *      Pure 函数：仅依赖入参，方便测试 + 节省 storage 读
+     */
+    function _renderSigil(uint256 tokenId, uint256 inferences) internal pure returns (string memory) {
+        string memory tokenIdStr = Strings.toString(tokenId);
+        string memory inferencesStr = Strings.toString(inferences);
+
+        return string(
+            abi.encodePacked(
+                '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">',
+                '<rect width="400" height="400" fill="#0a0c10"/>',
+                '<circle cx="200" cy="200" r="140" fill="none" stroke="#B75FFF" stroke-width="2" stroke-dasharray="4 4" opacity="0.4"/>',
+                '<circle cx="200" cy="200" r="100" fill="none" stroke="#B75FFF" stroke-width="2"/>',
+                '<text x="200" y="100" text-anchor="middle" font-family="monospace" font-size="11" fill="#6b7280" letter-spacing="3">ERC-7857 INFT</text>',
+                '<text x="200" y="160" text-anchor="middle" font-family="monospace" font-size="13" fill="#B75FFF" letter-spacing="2">FX RISK AGENT</text>',
+                '<text x="200" y="230" text-anchor="middle" font-family="monospace" font-size="64" font-weight="700" fill="#e4e7ef">#', tokenIdStr, '</text>',
+                '<text x="200" y="270" text-anchor="middle" font-family="monospace" font-size="11" fill="#6b7280">ON-CHAIN INFERENCES</text>',
+                '<text x="200" y="296" text-anchor="middle" font-family="monospace" font-size="22" font-weight="600" fill="#22c55e">', inferencesStr, '</text>',
+                '<text x="200" y="370" text-anchor="middle" font-family="monospace" font-size="10" fill="#6b7280" letter-spacing="2">BUILT ON 0G</text>',
+                '</svg>'
+            )
+        );
     }
 }
